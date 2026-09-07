@@ -29,13 +29,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p site
-          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 | tr -d '\n\r ' | base64 -d | gzip -d > site/index.html
+          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 app.part10 app.part11 | tr -d '\n\r ' | base64 -d | gzip -d > site/index.html
           cp manifest.webmanifest site/manifest.webmanifest
           cp icon-192.png site/icon-192.png
           cp icon-512.png site/icon-512.png
           cp service-worker.js site/service-worker.js
           touch site/.nojekyll
           test -s site/index.html
+          test "$(wc -c < site/index.html)" -gt 200000
           grep -q "Dalla Simo" site/index.html
 
       - name: Configura GitHub Pages
