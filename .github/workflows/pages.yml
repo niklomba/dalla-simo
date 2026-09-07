@@ -23,9 +23,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s home-icon-v112.b64
+          test -s home-icon-v112.part01
+          test -s home-icon-v112.part02
+          test -s home-icon-v112.part03
+          test -s home-icon-v112.part04
+          test -s home-icon-v112.part05
           test -s index.html
           test -s brand-v111-512.png
+          cat home-icon-v112.part01 home-icon-v112.part02 home-icon-v112.part03 home-icon-v112.part04 home-icon-v112.part05 > home-icon-v112.b64
           base64 -d home-icon-v112.b64 > home-icon-v112.jpg
 
           python - <<'PY'
@@ -35,11 +40,9 @@ jobs:
 
           src=Image.open('home-icon-v112.jpg').convert('RGB')
           for size,name in [(512,'icon-512-v112.png'),(192,'icon-192-v112.png'),(180,'apple-touch-icon-v112.png')]:
-              im=src.resize((size,size),Image.Resampling.LANCZOS)
-              im.save(name,'PNG',optimize=True)
+              src.resize((size,size),Image.Resampling.LANCZOS).save(name,'PNG',optimize=True)
 
-          # IMPORTANTE: dentro l'app resta identico alla v1.11.
-          # Cambiamo solo i riferimenti PWA/favicon, non logo, CSS, layout o testi visibili.
+          # L'app visibile resta identica alla v1.11: cambiano solo PWA/favicon.
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           s=re.sub(r'<link rel="manifest" href="[^"]+">', '<link rel="manifest" href="./manifest.webmanifest?v=112">', s, count=1)
