@@ -1,0 +1,51 @@
+name: Pubblica Dalla Simo
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il progetto
+        uses: actions/checkout@v4
+
+      - name: Prepara Dalla Simo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 | tr -d '\n\r ' | base64 -d | gzip -d > site/index.html
+          cp manifest.webmanifest site/manifest.webmanifest
+          cp icon-192.png site/icon-192.png
+          cp icon-512.png site/icon-512.png
+          cp service-worker.js site/service-worker.js
+          touch site/.nojekyll
+          test -s site/index.html
+          grep -q "Dalla Simo" site/index.html
+
+      - name: Configura GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Carica il sito
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "site"
+
+      - name: Pubblica GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
