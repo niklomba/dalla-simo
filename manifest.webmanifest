@@ -1,10 +1,10 @@
 {
-  "id": "./",
+  "id": "./?pwa=dalla-simo-v2",
   "name": "Dalla Simo — Alimentazione familiare",
   "short_name": "Dalla Simo",
   "description": "Ricette, planner, lista della spesa, dispensa e registro pasti della famiglia.",
   "lang": "it-IT",
-  "start_url": "./",
+  "start_url": "./?pwa=dalla-simo-v2",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -12,8 +12,8 @@
   "theme_color": "#5F7D63",
   "prefer_related_applications": false,
   "icons": [
-    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"./icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+    {"src":"./icon-192.png?v=20260907c","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"./icon-512.png?v=20260907c","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"./icon-maskable-512.png?v=20260907c","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ]
 }
