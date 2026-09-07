@@ -1,5 +1,5 @@
-const C='dalla-simo-v110-20260908';
-const A=['./','./index.html','./manifest.webmanifest','./domain-core.js','./domain-core-v19.part1','./domain-core-v19.part2','./domain-core-v19.part3','./domain-core-v19.part4','./brand-v110-512.png','./icon-192-v110.png','./icon-512-v110.png','./apple-touch-icon-v110.png'];
+const C='dalla-simo-v111-20260908';
+const A=['./','./index.html','./manifest.webmanifest','./domain-core.js','./domain-core-v19.part1','./domain-core-v19.part2','./domain-core-v19.part3','./domain-core-v19.part4','./brand-v111-512.png','./icon-192-v111.png','./icon-512-v111.png','./apple-touch-icon-v111.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
