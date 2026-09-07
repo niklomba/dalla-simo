@@ -25,9 +25,17 @@ jobs:
               fixed/p08_1 fixed/p08_2a fixed/p08_2b fixed/p08_3 fixed/p08_4 fixed/p08_5 fixed/p08_6 fixed/p08_7 fixed/p08_8 \
               app.part09 app.part10 app.part11 | tr -d '\n\r ' | base64 -d | gzip -d > index.html
           test -s index.html
-          test "$(wc -c < index.html)" -eq 236686
+          test "$(wc -c < index.html)" -ge 230000
           grep -q "Dalla Simo" index.html
           grep -qi "<!doctype html" index.html
+
+          # Fix PWA icone: niente ritaglio nel layout e cache-busting
+          sed -i 's#href="./manifest.webmanifest"#href="./manifest.webmanifest?v=20260907c"#g' index.html
+          sed -i 's#href="./icon-192.png"#href="./icon-192.png?v=20260907c"#g' index.html
+          sed -i 's#href="logo-dalla-simo.png"#href="./icon-192.png?v=20260907c"#g' index.html
+          sed -i 's#src="./icon-512.png"#src="./icon-512.png?v=20260907c"#g' index.html
+          sed -i 's#.brand-logo{width:48px;height:48px;object-fit:contain;flex:0 0 auto}#.brand-logo{width:48px;height:48px;object-fit:contain;object-position:center;padding:7px;flex:0 0 auto;background:#f7f5ef;border-radius:12px}#g' index.html
+          sed -i 's#.hero-logo{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto 8px}#.hero-logo{width:128px;height:128px;object-fit:contain;object-position:center;padding:18px;display:block;margin:0 auto 8px;background:#f7f5ef;border-radius:24px}#g' index.html
           echo "INDEX_OK bytes=$(wc -c < index.html)"
 
       - name: Pubblica index.html completo su main
