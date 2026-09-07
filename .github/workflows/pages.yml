@@ -1,4 +1,4 @@
-name: Genera Dalla Simo completa
+name: Aggiorna Dalla Simo v1.7
 
 on:
   push:
@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  genera-app:
-    if: ${{ !contains(github.event.head_commit.message, '[generated-v3]') }}
+  aggiorna-app:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-v17]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Scarica repository
@@ -19,59 +19,75 @@ jobs:
       - name: Prepara Pillow
         run: python -m pip install --quiet pillow
 
-      - name: Ricompone app e genera icone v3
+      - name: Genera icone e aggiorna PWA v1.7
         shell: bash
         run: |
           set -euo pipefail
-          cat fixed/p01a fixed/p01b fixed/p01c fixed/p01d \
-              app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 \
-              fixed/p08_1 fixed/p08_2a fixed/p08_2b fixed/p08_3 fixed/p08_4 fixed/p08_5 fixed/p08_6 fixed/p08_7 fixed/p08_8 \
-              app.part09 app.part10 app.part11 | tr -d '\n\r ' | base64 -d | gzip -d > index.html
           test -s index.html
-          test "$(wc -c < index.html)" -ge 230000
-          grep -q "Dalla Simo" index.html
-          grep -qi "<!doctype html" index.html
+          test -s icon-master-v3.png
 
           python - <<'PY'
           from pathlib import Path
-          from PIL import Image
+          from PIL import Image, ImageChops, ImageOps
+          import re
 
           bg=(247,245,239,255)
           src=Image.open('icon-master-v3.png').convert('RGBA')
 
-          def canvas_icon(size, ratio, out):
+          # Ritaglia automaticamente il margine chiaro mantenendo le proporzioni originali.
+          corner=Image.new('RGBA', src.size, src.getpixel((0,0)))
+          diff=ImageChops.difference(src, corner).convert('L')
+          mask=diff.point(lambda p: 255 if p > 10 else 0)
+          bbox=mask.getbbox()
+          art=src.crop(bbox) if bbox else src.copy()
+
+          # Piccolo margine di sicurezza attorno all'illustrazione.
+          pad=max(2, int(max(art.size)*0.025))
+          art=ImageOps.expand(art, border=pad, fill=src.getpixel((0,0)))
+
+          def make_square(size, fill_ratio, out):
               canvas=Image.new('RGBA',(size,size),bg)
-              target=int(size*ratio)
-              im=src.copy()
+              target=max(1,int(size*fill_ratio))
+              im=art.copy()
               im.thumbnail((target,target),Image.Resampling.LANCZOS)
-              x=(size-im.width)//2; y=(size-im.height)//2
+              x=(size-im.width)//2
+              y=(size-im.height)//2
               canvas.alpha_composite(im,(x,y))
               canvas.convert('RGB').save(out,'PNG',optimize=True)
 
-          canvas_icon(192,0.84,'icon-192-v3.png')
-          canvas_icon(512,0.84,'icon-512-v3.png')
-          canvas_icon(512,0.70,'icon-maskable-512-v3.png')
-          canvas_icon(180,0.84,'apple-touch-icon-v3.png')
-          canvas_icon(512,0.88,'logo-dalla-simo-v3.png')
+          # Launcher Android/iOS: molto più pieno del precedente, ma senza deformare.
+          make_square(192,0.97,'icon-192-v17.png')
+          make_square(512,0.97,'icon-512-v17.png')
+          make_square(512,0.90,'icon-maskable-512-v17.png')
+          make_square(180,0.97,'apple-touch-icon-v17.png')
+          # Logo interno: stesso disegno, grande e leggibile.
+          make_square(512,0.985,'logo-dalla-simo-v17.png')
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('href="./manifest.webmanifest"','href="./manifest.webmanifest?v=20260907v3"')
-          s=s.replace('href="./icon-192.png"','href="./apple-touch-icon-v3.png?v=20260907v3"')
-          s=s.replace('href="logo-dalla-simo.png"','href="./icon-192-v3.png?v=20260907v3"')
-          s=s.replace('src="./logo-dalla-simo.png"','src="./logo-dalla-simo-v3.png?v=20260907v3"')
-          s=s.replace('src="./icon-512.png"','src="./logo-dalla-simo-v3.png?v=20260907v3"')
-          s=s.replace('.brand-logo{width:48px;height:48px;object-fit:contain;flex:0 0 auto}', '.brand-logo{width:54px;height:54px;object-fit:contain;object-position:center;flex:0 0 auto}')
-          s=s.replace('.hero-logo{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto 8px}', '.hero-logo{width:148px;height:148px;object-fit:contain;object-position:center;display:block;margin:0 auto 8px}')
+          s=re.sub(r'<title>App Alimentazione — Dalla Simo v[^<]+</title>', '<title>App Alimentazione — Dalla Simo v1.7</title>', s)
+          s=re.sub(r'<link rel="manifest" href="[^"]+">', '<link rel="manifest" href="./manifest.webmanifest?v=17">', s, count=1)
+          s=re.sub(r'<link rel="apple-touch-icon" href="[^"]+">', '<link rel="apple-touch-icon" href="./apple-touch-icon-v17.png?v=17">', s)
+          s=re.sub(r'<link rel="icon" type="image/png" href="[^"]+">', '<link rel="icon" type="image/png" href="./icon-192-v17.png?v=17">', s, count=1)
+          s=re.sub(r'\.brand-logo\{[^}]*\}', '.brand-logo{width:108px;height:84px;object-fit:contain;object-position:center;flex:0 0 auto;display:block}', s, count=1)
+          s=re.sub(r'\.brand-title\{[^}]*\}', '.brand-title{font-size:24px;font-weight:900;line-height:1}', s, count=1)
+          s=re.sub(r'\.brand-subtitle\{[^}]*\}', '.brand-subtitle{font-size:12px;color:var(--muted);margin-top:5px}', s, count=1)
+          s=re.sub(r'\.hero-logo\{[^}]*\}', '.hero-logo{width:min(82vw,300px);height:auto;object-fit:contain;object-position:center;display:block;margin:0 auto 12px}', s, count=1)
+          s=re.sub(r'\.brand-home\{[^}]*\}', '.brand-home{text-align:center;padding:10px 0 8px}', s, count=1)
+          s=s.replace('Alimentazione familiare · v1.6','Alimentazione familiare · v1.7')
+          s=s.replace('Alimentazione familiare · v1.7','Alimentazione familiare · v1.7')
+          s=re.sub(r'src="\./logo-dalla-simo-v3\.png[^\"]*"', 'src="./logo-dalla-simo-v17.png?v=17"', s)
+          s=re.sub(r'src="\./logo-dalla-simo\.png[^\"]*"', 'src="./logo-dalla-simo-v17.png?v=17"', s)
+          s=re.sub(r'src="\./icon-512\.png[^\"]*"', 'src="./logo-dalla-simo-v17.png?v=17"', s)
           p.write_text(s,encoding='utf-8')
 
           Path('manifest.webmanifest').write_text('''{
-            "id": "./?pwa=dalla-simo-v3",
+            "id": "./?pwa=dalla-simo-v17",
             "name": "Dalla Simo — Alimentazione familiare",
             "short_name": "Dalla Simo",
             "description": "Ricette, planner, lista della spesa, dispensa e registro pasti della famiglia.",
             "lang": "it-IT",
-            "start_url": "./?pwa=dalla-simo-v3",
+            "start_url": "./?pwa=dalla-simo-v17",
             "scope": "./",
             "display": "standalone",
             "orientation": "portrait-primary",
@@ -79,31 +95,32 @@ jobs:
             "theme_color": "#5F7D63",
             "prefer_related_applications": false,
             "icons": [
-              {"src":"./icon-192-v3.png","sizes":"192x192","type":"image/png","purpose":"any"},
-              {"src":"./icon-512-v3.png","sizes":"512x512","type":"image/png","purpose":"any"},
-              {"src":"./icon-maskable-512-v3.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+              {"src":"./icon-192-v17.png","sizes":"192x192","type":"image/png","purpose":"any"},
+              {"src":"./icon-512-v17.png","sizes":"512x512","type":"image/png","purpose":"any"},
+              {"src":"./icon-maskable-512-v17.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
             ]
           }''',encoding='utf-8')
 
-          Path('service-worker.js').write_text('''const C='dalla-simo-gh-v3-20260907';
-          const A=['./','./index.html','./manifest.webmanifest','./icon-192-v3.png','./icon-512-v3.png','./icon-maskable-512-v3.png','./apple-touch-icon-v3.png','./logo-dalla-simo-v3.png'];
+          Path('service-worker.js').write_text('''const C='dalla-simo-gh-v17-20260908';
+          const A=['./','./index.html','./manifest.webmanifest','./icon-192-v17.png','./icon-512-v17.png','./icon-maskable-512-v17.png','./apple-touch-icon-v17.png','./logo-dalla-simo-v17.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
           self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });''',encoding='utf-8')
           PY
 
-          echo "INDEX_OK bytes=$(wc -c < index.html)"
-          file icon-192-v3.png icon-512-v3.png icon-maskable-512-v3.png logo-dalla-simo-v3.png
+          grep -q 'Dalla Simo v1.7' index.html
+          grep -q 'logo-dalla-simo-v17.png' index.html
+          file icon-192-v17.png icon-512-v17.png icon-maskable-512-v17.png logo-dalla-simo-v17.png
 
-      - name: Pubblica app e icone v3
+      - name: Pubblica Dalla Simo v1.7
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html manifest.webmanifest service-worker.js icon-192-v3.png icon-512-v3.png icon-maskable-512-v3.png apple-touch-icon-v3.png logo-dalla-simo-v3.png
+          git add index.html manifest.webmanifest service-worker.js icon-192-v17.png icon-512-v17.png icon-maskable-512-v17.png apple-touch-icon-v17.png logo-dalla-simo-v17.png
           if git diff --cached --quiet; then
-            echo "App già aggiornata"
+            echo "Dalla Simo v1.7 è già aggiornata"
             exit 0
           fi
-          git commit -m "[generated-v3] Pubblica icone definitive Dalla Simo"
+          git commit -m "[generated-v17] Pubblica Dalla Simo v1.7"
           git push
