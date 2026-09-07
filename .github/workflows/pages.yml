@@ -1,4 +1,4 @@
-name: Pubblica Dalla Simo
+name: Genera index completo Dalla Simo
 
 on:
   push:
@@ -6,47 +6,36 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  genera-index:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-index]') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Scarica il progetto
+      - name: Scarica repository
         uses: actions/checkout@v4
 
-      - name: Prepara Dalla Simo
+      - name: Ricompone l'app completa
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site
-          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 app.part10 app.part11 | tr -d '\n\r ' | base64 -d | gzip -d > site/index.html
-          cp manifest.webmanifest site/manifest.webmanifest
-          cp icon-192.png site/icon-192.png
-          cp icon-512.png site/icon-512.png
-          cp service-worker.js site/service-worker.js
-          touch site/.nojekyll
-          test -s site/index.html
-          test "$(wc -c < site/index.html)" -gt 200000
-          grep -q "Dalla Simo" site/index.html
+          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 app.part10 app.part11 | tr -d '\n\r ' | base64 -d | gzip -d > index.html
+          test -s index.html
+          test "$(wc -c < index.html)" -gt 200000
+          grep -q "Dalla Simo" index.html
+          grep -qi "<!doctype html" index.html
+          echo "INDEX_OK bytes=$(wc -c < index.html)"
 
-      - name: Configura GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Carica il sito
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "site"
-
-      - name: Pubblica GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Pubblica index.html completo su main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "index.html già aggiornato"
+            exit 0
+          fi
+          git commit -m "[generated-index] Pubblica Dalla Simo completa"
+          git push
