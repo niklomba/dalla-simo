@@ -1,14 +1,121 @@
-name: Manutenzione Dalla Simo
+name: Pubblica Dalla Simo v1.9
 
 on:
+  push:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verifica:
+  aggiorna-v19:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-v19]') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verifica repository
-        run: echo "Dalla Simo viene pubblicata direttamente dal branch main tramite GitHub Pages."
+      - name: Scarica repository
+        uses: actions/checkout@v4
+
+      - name: Prepara Pillow
+        run: python -m pip install --quiet pillow
+
+      - name: Genera branding e PWA v1.9
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s icon-master-v3.png
+          test -s domain-core.js
+          test -s domain-core-v19.part1
+          test -s domain-core-v19.part2
+          test -s domain-core-v19.part3
+          test -s domain-core-v19.part4
+
+          python - <<'PY'
+          from PIL import Image, ImageOps
+          from pathlib import Path
+          import json
+
+          BG=(247,245,239)
+          src=Image.open('icon-master-v3.png').convert('RGB')
+          px=src.load()
+          mask=Image.new('L',src.size,0)
+          mp=mask.load()
+          w,h=src.size
+          for y in range(h):
+              for x in range(w):
+                  r,g,b=px[x,y]
+                  spread=max(r,g,b)-min(r,g,b)
+                  dark=min(r,g,b)<185
+                  saturated=spread>24
+                  mp[x,y]=255 if (dark or saturated) else 0
+          bbox=mask.getbbox()
+          art=src.crop(bbox) if bbox else src.copy()
+          # piccolo margine, poi massima occupazione visiva
+          pad=max(2,int(max(art.size)*0.012))
+          art=ImageOps.expand(art,border=pad,fill=BG)
+
+          def square(size,ratio,path):
+              canvas=Image.new('RGB',(size,size),BG)
+              target=max(1,int(size*ratio))
+              im=art.copy()
+              scale=target/max(im.size)
+              nw=max(1,int(im.width*scale)); nh=max(1,int(im.height*scale))
+              im=im.resize((nw,nh),Image.Resampling.LANCZOS)
+              x=(size-nw)//2; y=(size-nh)//2
+              canvas.paste(im,(x,y))
+              canvas.save(path,'PNG',optimize=True)
+
+          # App: grande ma intera. Home: leggermente più zoomata per riempire il cerchio.
+          square(512,0.99,'brand-v19-512.png')
+          square(512,1.10,'icon-512-v19.png')
+          square(192,1.10,'icon-192-v19.png')
+          square(180,1.10,'apple-touch-icon-v19.png')
+
+          # Compatibilità con i link vecchi già presenti nell'HTML.
+          Image.open('brand-v19-512.png').save('logo-dalla-simo-v17.png','PNG',optimize=True)
+          Image.open('icon-192-v19.png').save('icon-192-v17.png','PNG',optimize=True)
+          Image.open('icon-512-v19.png').save('icon-512-v17.png','PNG',optimize=True)
+          Image.open('apple-touch-icon-v19.png').save('apple-touch-icon-v17.png','PNG',optimize=True)
+
+          manifest={
+            'id':'./?pwa=dalla-simo-v19',
+            'name':'Dalla Simo — Alimentazione familiare',
+            'short_name':'Dalla Simo',
+            'description':'Dieta completa, ricette, ricetta rapida, planner e spesa familiare.',
+            'lang':'it-IT','start_url':'./?pwa=dalla-simo-v19','scope':'./','display':'standalone',
+            'orientation':'portrait-primary','background_color':'#F7F5EF','theme_color':'#5F7D63',
+            'prefer_related_applications':False,
+            'icons':[
+              {'src':'./icon-192-v19.png','sizes':'192x192','type':'image/png','purpose':'any'},
+              {'src':'./icon-512-v19.png','sizes':'512x512','type':'image/png','purpose':'any maskable'}
+            ]
+          }
+          Path('manifest.webmanifest').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
+
+          sw="""const C='dalla-simo-v19-20260908';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js','./domain-core-v19.part1','./domain-core-v19.part2','./domain-core-v19.part3','./domain-core-v19.part4','./brand-v19-512.png','./icon-192-v19.png','./icon-512-v19.png','./apple-touch-icon-v19.png'];
+          self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
+          self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
+          self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
+          """
+          Path('service-worker.js').write_text(sw,encoding='utf-8')
+          PY
+
+      - name: Verifica file generati
+        run: |
+          file brand-v19-512.png icon-192-v19.png icon-512-v19.png apple-touch-icon-v19.png
+          grep -q 'dalla-simo-v19' manifest.webmanifest
+          grep -q 'Dalla Simo v1.9' domain-core-v19.part1
+
+      - name: Pubblica v1.9
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add domain-core.js domain-core-v19.part1 domain-core-v19.part2 domain-core-v19.part3 domain-core-v19.part4 manifest.webmanifest service-worker.js brand-v19-512.png icon-192-v19.png icon-512-v19.png apple-touch-icon-v19.png logo-dalla-simo-v17.png icon-192-v17.png icon-512-v17.png apple-touch-icon-v17.png
+          if git diff --cached --quiet; then
+            echo "v1.9 già aggiornata"
+            exit 0
+          fi
+          git commit -m "[generated-v19] Pubblica Dalla Simo v1.9"
+          git push
