@@ -1,7 +1,23 @@
-// Loader Dalla Simo v1.14
-(async()=>{try{
-  const p=await Promise.all([1,2,3,4].map(n=>fetch('./domain-core-v19.part'+n+'?v=19',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Parte '+n+' non disponibile');return r.text()})));
-  (0,eval)(p.join(''));
-  const a=await fetch('./domain-core-v113.js?v=113',{cache:'no-store'});if(!a.ok)throw new Error('Patch v1.13 non disponibile');(0,eval)(await a.text());
-  const b=await fetch('./domain-core-v114.js?v=114',{cache:'no-store'});if(!b.ok)throw new Error('Patch v1.14 non disponibile');(0,eval)(await b.text());
-}catch(e){console.error('Dalla Simo v1.14:',e);}})();
+// Loader Dalla Simo v1.15 — carica le patch come script classici nello stesso ambiente globale della pagina
+(function(){
+  function carica(src){
+    return new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src=src;
+      s.async=false;
+      s.onload=resolve;
+      s.onerror=()=>reject(new Error('Impossibile caricare '+src));
+      document.head.appendChild(s);
+    });
+  }
+  carica('./domain-core-v113.js?v=115')
+    .then(()=>carica('./domain-core-v114.js?v=115'))
+    .then(()=>{
+      document.title='App Alimentazione — Dalla Simo v1.15';
+      const sub=document.querySelector('.brand-subtitle');
+      if(sub)sub.textContent='Alimentazione familiare · v1.15';
+      window.__DALLA_SIMO_BUILD__='v1.15';
+      console.log('Dalla Simo v1.15 attiva');
+    })
+    .catch(e=>console.error('Dalla Simo v1.15:',e));
+})();
