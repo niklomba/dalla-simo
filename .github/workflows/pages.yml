@@ -1,4 +1,4 @@
-name: Pubblica Dalla Simo v1.14
+name: Pubblica Dalla Simo v1.15
 
 on:
   push:
@@ -9,21 +9,17 @@ permissions:
   contents: write
 
 jobs:
-  aggiorna-v114:
-    if: ${{ !contains(github.event.head_commit.message, '[generated-v114]') }}
+  aggiorna-v115:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-v115]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Scarica repository
         uses: actions/checkout@v4
 
-      - name: Prepara Dalla Simo v1.14
+      - name: Prepara Dalla Simo v1.15
         shell: bash
         run: |
           set -euo pipefail
-          test -s domain-core-v19.part1
-          test -s domain-core-v19.part2
-          test -s domain-core-v19.part3
-          test -s domain-core-v19.part4
           test -s domain-core-v113.js
           test -s domain-core-v114.js
           test -s brand-v111-512.png
@@ -33,13 +29,29 @@ jobs:
           node --check domain-core-v114.js
 
           cat > domain-core.js <<'JS'
-          // Loader Dalla Simo v1.14
-          (async()=>{try{
-            const p=await Promise.all([1,2,3,4].map(n=>fetch('./domain-core-v19.part'+n+'?v=19',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Parte '+n+' non disponibile');return r.text()})));
-            (0,eval)(p.join(''));
-            const a=await fetch('./domain-core-v113.js?v=113',{cache:'no-store'});if(!a.ok)throw new Error('Patch v1.13 non disponibile');(0,eval)(await a.text());
-            const b=await fetch('./domain-core-v114.js?v=114',{cache:'no-store'});if(!b.ok)throw new Error('Patch v1.14 non disponibile');(0,eval)(await b.text());
-          }catch(e){console.error('Dalla Simo v1.14:',e);}})();
+          // Loader Dalla Simo v1.15 — carica le patch come script classici nello stesso ambiente globale della pagina
+          (function(){
+            function carica(src){
+              return new Promise((resolve,reject)=>{
+                const s=document.createElement('script');
+                s.src=src;
+                s.async=false;
+                s.onload=resolve;
+                s.onerror=()=>reject(new Error('Impossibile caricare '+src));
+                document.head.appendChild(s);
+              });
+            }
+            carica('./domain-core-v113.js?v=115')
+              .then(()=>carica('./domain-core-v114.js?v=115'))
+              .then(()=>{
+                document.title='App Alimentazione — Dalla Simo v1.15';
+                const sub=document.querySelector('.brand-subtitle');
+                if(sub)sub.textContent='Alimentazione familiare · v1.15';
+                window.__DALLA_SIMO_BUILD__='v1.15';
+                console.log('Dalla Simo v1.15 attiva');
+              })
+              .catch(e=>console.error('Dalla Simo v1.15:',e));
+          })();
           JS
 
           python - <<'PY'
@@ -47,43 +59,45 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.14</title>',s,count=1,flags=re.S)
-          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.14',s)
+          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.15</title>',s,count=1,flags=re.S)
+          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.15',s)
           s=re.sub(r'\s*<script\s+src=["\']\./domain-core\.js(?:\?v=\d+)?["\']\s*></script>\s*','\n',s,flags=re.I)
-          s=s.replace('</body>','<script src="./domain-core.js?v=114"></script>\n</body>')
+          s=s.replace('</body>','<script src="./domain-core.js?v=115"></script>\n</body>')
           p.write_text(s,encoding='utf-8')
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v114-20260908';
-          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js','./domain-core-v19.part1','./domain-core-v19.part2','./domain-core-v19.part3','./domain-core-v19.part4','./domain-core-v113.js','./domain-core-v114.js','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
+          const C='dalla-simo-v115-20260908';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=115','./domain-core-v113.js?v=115','./domain-core-v114.js?v=115','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
           self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
           JS
 
-      - name: Verifica v1.14
+      - name: Verifica v1.15
         run: |
           node --check domain-core.js
+          node --check domain-core-v113.js
           node --check domain-core-v114.js
-          grep -q 'Dalla Simo v1.14' index.html
-          grep -q 'domain-core.js?v=114' index.html
-          grep -q 'domain-core-v114.js' service-worker.js
+          grep -q 'Dalla Simo v1.15' index.html
+          grep -q 'domain-core.js?v=115' index.html
+          grep -q "document.createElement('script')" domain-core.js
+          if grep -q '(0,eval)' domain-core.js; then exit 1; fi
           grep -q 'DIETA INSERITA' domain-core-v114.js
           grep -q 'Registro pasti' domain-core-v114.js
           grep -q 'Ricetta con ciò che hai in dispensa' domain-core-v114.js
           grep -q 'FLASH · 5–15 minuti' domain-core-v114.js
           grep -q '20 g, indicati nel piano come 4 cucchiaini' domain-core-v114.js
 
-      - name: Pubblica v1.14
+      - name: Pubblica v1.15
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html domain-core.js service-worker.js
           if git diff --cached --quiet; then
-            echo "v1.14 già aggiornata"
+            echo "v1.15 già aggiornata"
             exit 0
           fi
-          git commit -m "[generated-v114] Pubblica Dalla Simo v1.14"
+          git commit -m "[generated-v115] Pubblica Dalla Simo v1.15"
           git push
