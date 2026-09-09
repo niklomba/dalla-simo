@@ -122,7 +122,11 @@ function boot117SearchScanner(){
       const camId=post?.id||(cams||[])[0]?.id||{facingMode:'environment'};
       scanner117=new Html5Qrcode('reader116');
       const cfg={fps:12,qrbox:{width:280,height:160}};
-      await scanner117.start(camId,cfg,code=>{fermaScanner117();if(typeof gestisciCodice116==='function')gestisciCodice116(code,mode)},()=>{});
+      await scanner117.start(camId,cfg,async code=>{
+        await fermaScanner117();
+        const input=document.getElementById('codiceManuale116');if(input)input.value=code;
+        if(typeof window.usaCodiceManuale116==='function')window.usaCodiceManuale116(mode);
+      },()=>{});
       msg('Fotocamera attiva: avvicina il codice a barre e tienilo dentro il riquadro.');
     }catch(e){
       console.warn('Dalla Simo scanner:',e);
