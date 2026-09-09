@@ -1,4 +1,4 @@
-name: Pubblica Dalla Simo v1.16
+name: Pubblica Dalla Simo v1.17
 
 on:
   push:
@@ -9,35 +9,35 @@ permissions:
   contents: write
 
 jobs:
-  aggiorna-v116:
-    if: ${{ !contains(github.event.head_commit.message, '[generated-v116]') }}
+  aggiorna-v117:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-v117]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Scarica repository
         uses: actions/checkout@v4
 
-      - name: Prepara Dalla Simo v1.16
+      - name: Prepara Dalla Simo v1.17
         shell: bash
         run: |
           set -euo pipefail
           test -s domain-core-v113.js
           test -s domain-core-v114.js
-          test -s domain-core-v116.part1
-          test -s domain-core-v116.part2
-          test -s domain-core-v116.part3
-          test -s domain-core-v116.part4
-          test -s domain-core-v116.part5
+          test -s domain-core-v116.js
+          test -s domain-core-v117.part1
+          test -s domain-core-v117.part2
+          test -s domain-core-v117.part3
           test -s brand-v111-512.png
           test -s icon-192-v112.png
           test -s icon-512-v112.png
 
-          cat domain-core-v116.part1 domain-core-v116.part2 domain-core-v116.part3 domain-core-v116.part4 domain-core-v116.part5 > domain-core-v116.js
+          cat domain-core-v117.part1 domain-core-v117.part2 domain-core-v117.part3 > domain-core-v117.js
           node --check domain-core-v113.js
           node --check domain-core-v114.js
           node --check domain-core-v116.js
+          node --check domain-core-v117.js
 
           cat > domain-core.js <<'JS'
-          // Loader Dalla Simo v1.16 — patch classiche nello stesso ambiente globale della pagina
+          // Loader Dalla Simo v1.17 — patch classiche nello stesso ambiente globale della pagina
           (function(){
             function carica(src){
               return new Promise((resolve,reject)=>{
@@ -49,17 +49,18 @@ jobs:
                 document.head.appendChild(s);
               });
             }
-            carica('./domain-core-v113.js?v=116')
-              .then(()=>carica('./domain-core-v114.js?v=116'))
-              .then(()=>carica('./domain-core-v116.js?v=116'))
+            carica('./domain-core-v113.js?v=117')
+              .then(()=>carica('./domain-core-v114.js?v=117'))
+              .then(()=>carica('./domain-core-v116.js?v=117'))
+              .then(()=>carica('./domain-core-v117.js?v=117'))
               .then(()=>{
-                document.title='App Alimentazione — Dalla Simo v1.16';
+                document.title='App Alimentazione — Dalla Simo v1.17';
                 const sub=document.querySelector('.brand-subtitle');
-                if(sub)sub.textContent='Alimentazione familiare · v1.16';
-                window.__DALLA_SIMO_BUILD__='v1.16';
-                console.log('Dalla Simo v1.16 attiva');
+                if(sub)sub.textContent='Alimentazione familiare · v1.17';
+                window.__DALLA_SIMO_BUILD__='v1.17';
+                console.log('Dalla Simo v1.17 attiva');
               })
-              .catch(e=>console.error('Dalla Simo v1.16:',e));
+              .catch(e=>console.error('Dalla Simo v1.17:',e));
           })();
           JS
 
@@ -68,52 +69,51 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.16</title>',s,count=1,flags=re.S)
-          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.16',s)
+          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.17</title>',s,count=1,flags=re.S)
+          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.17',s)
           s=re.sub(r'\s*<script\s+src=["\']\./domain-core\.js(?:\?v=\d+)?["\']\s*></script>\s*','\n',s,flags=re.I)
-          s=s.replace('</body>','<script src="./domain-core.js?v=116"></script>\n</body>')
+          s=s.replace('</body>','<script src="./domain-core.js?v=117"></script>\n</body>')
           p.write_text(s,encoding='utf-8')
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v116-20260909';
-          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=116','./domain-core-v113.js?v=116','./domain-core-v114.js?v=116','./domain-core-v116.js?v=116','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
+          const C='dalla-simo-v117-20260909';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
           self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
           JS
 
-      - name: Verifica v1.16
+      - name: Verifica v1.17
         shell: bash
         run: |
           set -euo pipefail
           node --check domain-core.js
-          node --check domain-core-v113.js
-          node --check domain-core-v114.js
-          node --check domain-core-v116.js
-          grep -q 'Dalla Simo v1.16' index.html
-          grep -q 'domain-core.js?v=116' index.html
-          grep -q 'domain-core-v116.js?v=116' domain-core.js
-          grep -q "document.createElement('script')" domain-core.js
-          if grep -q '(0,eval)' domain-core.js; then exit 1; fi
-          grep -q 'Ricette scartate' domain-core-v116.js
-          grep -q 'Azzera tutti i preferiti' domain-core-v116.js
-          grep -q 'Compra tutta la dieta' domain-core-v116.js
-          grep -q 'Scansiona codice prodotto' domain-core-v116.js
-          grep -q 'Html5Qrcode' domain-core-v116.js
-          grep -q 'const MERENDE' domain-core-v116.js
-          grep -q 'Da comprare' domain-core-v116.js
-          grep -q 'DISPENSA' domain-core-v116.js
+          node --check domain-core-v117.js
+          grep -q 'Dalla Simo v1.17' index.html
+          grep -q 'domain-core.js?v=117' index.html
+          grep -q 'domain-core-v117.js?v=117' domain-core.js
+          grep -q 'Scarta tutte le versioni di questo tipo' domain-core-v117.js
+          grep -q 'ALT_BASE' domain-core-v117.js
+          grep -q "'Lunedì':{Spuntino:1,Merenda:1}" domain-core-v117.js
+          grep -q "'Mercoledì':{Spuntino:1,Merenda:4}" domain-core-v117.js
+          grep -q "'Domenica':{Spuntino:1,Merenda:4}" domain-core-v117.js
+          grep -q "Latte parzialmente scremato',100" domain-core-v117.js
+          grep -q "Olio extravergine di oliva',20" domain-core-v117.js
+          grep -q "Cioccolato fondente 80–85%',20" domain-core-v117.js
+          grep -q "Frutta secca',15" domain-core-v117.js
+          grep -q 'Riepilogo quantità dieta Simona' domain-core-v117.js
+          grep -q 'q.b.' domain-core-v117.js
 
-      - name: Pubblica v1.16
+      - name: Pubblica v1.17
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html domain-core.js domain-core-v116.js service-worker.js
+          git add index.html domain-core.js domain-core-v117.js service-worker.js
           if git diff --cached --quiet; then
-            echo "v1.16 già aggiornata"
+            echo "v1.17 già aggiornata"
             exit 0
           fi
-          git commit -m "[generated-v116] Pubblica Dalla Simo v1.16"
+          git commit -m "[generated-v117] Pubblica Dalla Simo v1.17"
           git push
