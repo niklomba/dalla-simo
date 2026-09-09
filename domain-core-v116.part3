@@ -1,0 +1,45 @@
+;save();if(typeof renderSpesa==='function')renderSpesa();toast('Lista spesa azzerata')}};
+  window.resetCompleto116=function(){
+    if(!confirm('Ripristinare TUTTA Dalla Simo ai dati iniziali? Questa operazione cancella preferiti, registro, dispensa, spesa, planner e impostazioni locali.'))return;
+    if(!confirm('Conferma definitiva del ripristino completo?'))return;
+    st=base();st.preferitiAzzerati={};(st.membri||[]).forEach(m=>st.preferitiAzzerati[m.id]=true);st.ricetteScartate={manuali:[],ingredienti:[],eccezioni:[]};save();location.reload();
+  };
+
+  window.renderMembri=function(){
+    const box=document.getElementById('membri');if(!box)return;
+    box.innerHTML=(st.membri||[]).map(m=>{
+      const p=st.pianiPersona?.[m.id];const fav=(m.preferiti||[]).map(id=>MASTER.find(r=>r.id===id)).filter(Boolean);
+      return '<div class="card"><div class="member"><div class="avatar">'+H(m.nome[0])+'</div><div style="flex:1"><h3>'+H(m.nome)+'</h3><div class="meta">'+H(m.eta)+' · '+(m.tipo==='adulto'?'adulto':'minore')+'</div>'+(p?'<div class="v114-plan-badge">DIETA INSERITA</div>':'')+'</div><span class="pill">'+fav.length+' preferiti</span></div>'+
+      '<div style="margin-top:10px"><div class="v116-head"><b>Alimenti / ricette preferiti</b><button class="btn small danger" onclick="azzeraPreferiti116(\''+m.id+'\')">Azzera</button></div>'+
+      (fav.length?fav.map(r=>'<div class="v116-fav"><div><div class="recipe-title">'+H(r.nome)+'</div><div class="tiny">'+H(r.variante)+(eScartata(r)?' · SCARTATA':'')+'</div></div><button class="btn small secondary" onclick="rimuoviPreferito116(\''+m.id+'\',\''+r.id+'\')">Rimuovi</button></div>').join(''):'<div class="empty">Nessun preferito.</div>')+'</div>'+
+      (p?'<button class="btn full secondary" style="margin-top:10px" onclick="vaiDieta114(\''+m.id+'\')">Apri dieta</button>':'')+'</div>';
+    }).join('')+
+    '<div class="card"><h3>Strumenti famiglia</h3><div class="v114-actions"><button class="v114-action" onclick="showScreenById(\'registro\')"><b>📝</b>Registro pasti</button><button class="v114-action" onclick="showScreenById(\'dispensa\')"><b>🥫</b>Dispensa</button><button class="v114-action" onclick="vaiMenuBase114()"><b>🗓️</b>Menu</button></div></div>'+
+    '<div class="card"><h3>Reset e manutenzione</h3><div class="meta">Ogni reset richiede conferma.</div><div class="v116-reset"><button class="btn secondary" onclick="azzeraTuttiPreferiti116()">Azzera tutti i preferiti</button><button class="btn secondary" onclick="resetRegistro116()">Azzera registro pasti</button><button class="btn secondary" onclick="resetDispensa116()">Azzera dispensa</button><button class="btn secondary" onclick="resetSpesa116()">Azzera spesa</button><button class="btn danger" onclick="ripristinaTutteScartate116()">Ripristina ricette scartate</button><button class="btn danger" onclick="resetCompleto116()">Reset completo app</button></div></div>';
+  };
+
+  // --- Dieta Simona: alternative esplicite e modificabili ---
+  function numAlt(v,def){const m=String(v||'').match(/(?:alternativa|alt)\s*(\d+)/i);return m?Number(m[1]):def}
+  function initAlternative116(){
+    const week=st.pianiPersona?.[sid]?.settimana||{};
+    GIORNI.forEach(g=>{st.simonaAlternative[g]=st.simonaAlternative[g]||{};if(!st.simonaAlternative[g].Spuntino)st.simonaAlternative[g].Spuntino=numAlt(week[g]?.Spuntino,1);if(!st.simonaAlternative[g].Merenda)st.simonaAlternative[g].Merenda=numAlt(week[g]?.Merenda,1)});
+  }
+  initAlternative116();
+  window.cambiaAlternativaSimona116=function(g,pasto,n){st.simonaAlternative[g]=st.simonaAlternative[g]||{};st.simonaAlternative[g][pasto]=Number(n);save();if(typeof renderSettimana==='function')renderSettimana();toast(pasto+' di '+g+' aggiornata')};
+  function selectAlt116(g,pasto,map){
+    const n=st.simonaAlternative?.[g]?.[pasto]||1;
+    return '<select class="search" onchange="cambiaAlternativaSimona116(\''+g+'\',\''+pasto+'\',this.value)">'+Object.keys(map).map(k=>'<option value="'+k+'" '+(Number(k)===Number(n)?'selected':'')+'>Alternativa '+k+' — '+H(map[k])+'</option>').join('')+'</select>';
+  }
+  function montaAlternativeMenu116(){
+    const sec=document.getElementById('settimana');if(!sec)return;
+    let box=document.getElementById('v116AlternativeSimona');
+    const completa=st.v113?.modalitaMenu==='completa' && (!st.v113?.membroDieta||st.v113.membroDieta===sid);
+    if(!completa){if(box)box.remove();return}
+    const g=GIORNI.includes(st.giornoPlanner)?st.giornoPlanner:'Lunedì';
+    if(!box){box=document.createElement('div');box.id='v116AlternativeSimona';const help=document.getElementById('v114MenuHelp');if(help)help.insertAdjacentElement('afterend',box);else sec.prepend(box)}
+    box.innerHTML='<div class="card hero"><div class="row between"><div><h3>Simona · alternative di '+H(g)+'</h3><div class="v114-plan-badge">DIETA INSERITA</div></div><button class="btn small" onclick="dettagliSimona113()">Apri dieta</button></div><div class="v116-alt"><b>Spuntino</b>'+selectAlt116(g,'Spuntino',SPUNTINI)+'</div><div class="v116-alt"><b>Merenda</b>'+selectAlt116(g,'Merenda',MERENDE)+'</div><div class="grid2"><button class="btn" onclick="compraDietaGiorno116(\''+g+'\')">🛒 Compra tutto '+H(g)+'</button><button class="btn secondary" onclick="compraDietaSettimana116()">🛒 Compra tutta la dieta</button></div></div>';
+  }
+
+  function dispensaHa116(nome){const n=N(nome);return (st.dispensa||[]).some(x=>N(x.nome).includes(n)||n.includes(N(x.nome)))}
+  const DIET_KEYS=[
+    ['latte','Latte'],['caffe','Caffè'],['yogurt','Yogurt greco'],['kefir','Kefir'],['cioccolato','Cioccolato fondente'],['frutta secca','Frutta secca'],['frutto','Frutta'],['frutti di bosco','Frutti di bosco'],['grana','Grana Padano'],['parmigiano','Parmigiano Reggiano'],['olive','Olive verdi'],['mozzarella','Mozzarella'],['spinaci','Spinaci'],['olio evo','Olio EVO'],['merluzzo','Merluzzo'],['finocchi','Finocchi'],['pane','Pane'],['pollo','Pollo'],['zucchine','Zucchine'],['uova','Uova'],['pasta','Pasta'],['hamburger
