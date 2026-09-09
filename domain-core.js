@@ -14,6 +14,7 @@
     .then(()=>carica('./domain-core-v114.js?v=117'))
     .then(()=>carica('./domain-core-v116.js?v=117'))
     .then(()=>carica('./domain-core-v117.js?v=117'))
+    .then(()=>carica('./domain-core-v117-discard-ui.js?v=117'))
     .then(()=>{
       document.title='App Alimentazione — Dalla Simo v1.17';
       const sub=document.querySelector('.brand-subtitle');
