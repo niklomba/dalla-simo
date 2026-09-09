@@ -1,0 +1,52 @@
+','Carne di manzo'],['carne rossa','Carne di manzo'],['orzo','Orzo'],['farro','Farro'],['piselli','Piselli'],['fagiolini','Fagiolini'],['bresaola','Bresaola'],['valeriana','Valeriana'],['pomodorini','Pomodorini'],["fiori d'acqua","Fiori d’acqua"],['orata','Orata'],['ceci','Ceci'],['gallette','Gallette'],['cetrioli','Cetrioli'],['gnocchi','Gnocchi'],['sugo di pomodoro','Sugo di pomodoro'],['branzino','Branzino'],['riso','Riso'],['tonno','Tonno'],['sottaceti','Sottaceti'],['barbabietola','Barbabietola'],['zafferano','Zafferano'],['sogliola','Sogliola'],['bistecca','Carne di manzo'],['manzo','Carne di manzo'],['carote','Carote']
+  ];
+  function ingredientiTesto116(text){
+    const z=N(text),out=[];DIET_KEYS.forEach(([k,v])=>{if(z.includes(N(k))&&!out.includes(v))out.push(v)});return out;
+  }
+  function badgeDispensaTesto116(text){
+    const presenti=ingredientiTesto116(text).filter(dispensaHa116);
+    return presenti.length?'<div class="meta" style="margin-top:5px"><span class="v116-shop-disp">DISPENSA</span> '+presenti.map(H).join(', ')+'</div>':'';
+  }
+  function testoPasto116(g,pasto){
+    if(pasto==='Spuntino')return SPUNTINI[st.simonaAlternative?.[g]?.Spuntino||1];
+    if(pasto==='Merenda')return MERENDE[st.simonaAlternative?.[g]?.Merenda||1];
+    if(pasto==='Colazione')return 'Caffè senza zucchero + latte parzialmente scremato 100 g';
+    return st.pianiPersona?.[sid]?.settimana?.[g]?.[pasto]||'';
+  }
+  function aggiungiListaSpesa116(nomi,origine){
+    let added=0,pantry=0;nomi.forEach(nome=>{if(dispensaHa116(nome)){pantry++;return}const n=N(nome);let ex=(st.spesa||[]).find(x=>x.stato==='da_comprare'&&(N(x.nome)===n||N(x.nome).includes(n)||n.includes(N(x.nome))));if(ex){if(!ex.origini.includes(origine))ex.origini.push(origine)}else{st.spesa.push({id:'s'+Date.now()+Math.random().toString(16).slice(2,6),nome,quantita:1,unita:'confezione',stato:'da_comprare',origini:[origine]});added++}});save();if(typeof renderSpesa==='function')renderSpesa();toast(added+' aggiunti alla spesa'+(pantry?' · '+pantry+' già in DISPENSA':''));
+  }
+  window.compraDietaGiorno116=function(g){const arr=[];['Colazione','Spuntino','Pranzo','Merenda','Cena'].forEach(p=>ingredientiTesto116(testoPasto116(g,p)).forEach(x=>{if(!arr.includes(x))arr.push(x)}));aggiungiListaSpesa116(arr,'Dieta Simona · '+g)};
+  window.compraDietaSettimana116=function(){const arr=[];GIORNI.forEach(g=>['Colazione','Spuntino','Pranzo','Merenda','Cena'].forEach(p=>ingredientiTesto116(testoPasto116(g,p)).forEach(x=>{if(!arr.includes(x))arr.push(x)})));aggiungiListaSpesa116(arr,'Dieta Simona · settimana')};
+
+  window.dettagliSimona113=function(){
+    const p=st.pianiPersona?.[sid],week=p?.settimana||{};
+    const daily=GIORNI.map(g=>'<div class="card"><div class="row between"><h3>'+H(g)+'</h3><button class="btn small" onclick="compraDietaGiorno116(\''+g+'\')">🛒 Compra tutto</button></div><div class="family"><b>Colazione:</b> Caffè senza zucchero q.b. + latte parzialmente scremato 100 g'+badgeDispensaTesto116('caffè latte')+'</div><div class="v116-alt"><b>Spuntino</b>'+selectAlt116(g,'Spuntino',SPUNTINI)+badgeDispensaTesto116(SPUNTINI[st.simonaAlternative?.[g]?.Spuntino||1])+'</div><div class="family"><b>Pranzo:</b> '+H(week[g]?.Pranzo||'—')+badgeDispensaTesto116(week[g]?.Pranzo||'')+'</div><div class="v116-alt"><b>Merenda</b>'+selectAlt116(g,'Merenda',MERENDE)+badgeDispensaTesto116(MERENDE[st.simonaAlternative?.[g]?.Merenda||1])+'</div><div class="family"><b>Cena:</b> '+H(week[g]?.Cena||'—')+badgeDispensaTesto116(week[g]?.Cena||'')+'</div></div>').join('');
+    const notes=(p?.note_allegati||[]).map(x=>'<li>'+H(x)+'</li>').join('');
+    openModal('Piano alimentare Simona','<div class="note"><b>DIETA INSERITA.</b> Piano professionale organizzato senza modificare le prescrizioni degli allegati.</div><div class="grid2" style="margin-top:10px"><button class="btn" onclick="compraDietaSettimana116()">🛒 Compra tutta la dieta</button><button class="btn secondary" onclick="showScreenById(\'spesa\');closeModal()">Apri spesa</button></div><h3 style="margin-top:14px">Alternative modificabili</h3><div class="meta">Spuntino e merenda mostrano sempre l’alimento previsto per l’alternativa selezionata.</div>'+daily+'<h3>Regole e quantità del piano</h3><ul>'+notes+'</ul>');
+  };
+
+  const renderSettimanaPre116=window.renderSettimana;
+  window.renderSettimana=function(){if(typeof renderSettimanaPre116==='function')renderSettimanaPre116();montaAlternativeMenu116()};
+
+  // --- Spesa: DA COMPRARE sopra, COMPRATI sotto ---
+  function riordinaSpesa116(){
+    const co=document.getElementById('cardComprati'),da=document.getElementById('listaDaComprare')?.closest('.card');if(!co||!da||!co.parentNode)return;
+    if(da.nextElementSibling!==co)co.parentNode.insertBefore(da,co);
+    const note=document.querySelector('#spesa .note');if(note)note.innerHTML='Gli ingredienti <b>Da comprare</b> sono mostrati sopra. Quando li tocchi vengono spostati sotto, nella sezione <b>Comprati</b>, dove possono essere cancellati.';
+  }
+  const renderSpesaPre116=window.renderSpesa;
+  window.renderSpesa=function(){if(typeof renderSpesaPre116==='function')renderSpesaPre116();riordinaSpesa116();montaScannerButtons116()};
+
+  // --- Scanner QR / codici a barre per Spesa e Dispensa ---
+  let scanner116=null;
+  function caricaScannerLib116(){
+    if(window.Html5Qrcode)return Promise.resolve();
+    return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
+  }
+  async function fermaScanner116(){try{if(scanner116){await scanner116.stop();await scanner116.clear()}}catch(e){}scanner116=null}
+  const closeModalPre116=window.closeModal;
+  window.closeModal=function(){fermaScanner116();if(typeof closeModalPre116==='function')closeModalPre116()};
+  window.apriScanner116=function(mode){
+    const label=mode==='spesa'?'Spesa':'Dispensa';
+    openModal('Scansiona 
