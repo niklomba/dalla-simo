@@ -1,4 +1,4 @@
-// Loader Dalla Simo v1.15 — carica le patch come script classici nello stesso ambiente globale della pagina
+// Loader Dalla Simo v1.16 — patch classiche nello stesso ambiente globale della pagina
 (function(){
   function carica(src){
     return new Promise((resolve,reject)=>{
@@ -10,14 +10,15 @@
       document.head.appendChild(s);
     });
   }
-  carica('./domain-core-v113.js?v=115')
-    .then(()=>carica('./domain-core-v114.js?v=115'))
+  carica('./domain-core-v113.js?v=116')
+    .then(()=>carica('./domain-core-v114.js?v=116'))
+    .then(()=>carica('./domain-core-v116.js?v=116'))
     .then(()=>{
-      document.title='App Alimentazione — Dalla Simo v1.15';
+      document.title='App Alimentazione — Dalla Simo v1.16';
       const sub=document.querySelector('.brand-subtitle');
-      if(sub)sub.textContent='Alimentazione familiare · v1.15';
-      window.__DALLA_SIMO_BUILD__='v1.15';
-      console.log('Dalla Simo v1.15 attiva');
+      if(sub)sub.textContent='Alimentazione familiare · v1.16';
+      window.__DALLA_SIMO_BUILD__='v1.16';
+      console.log('Dalla Simo v1.16 attiva');
     })
-    .catch(e=>console.error('Dalla Simo v1.15:',e));
+    .catch(e=>console.error('Dalla Simo v1.16:',e));
 })();
