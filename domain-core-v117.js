@@ -16,12 +16,16 @@ function boot117(){
   const sub=document.querySelector('.brand-subtitle');if(sub)sub.textContent='Alimentazione familiare · v1.17';
 
   // ---------- 1) SCARTO DI TUTTE LE RICETTE DELLO STESSO TIPO/FAMIGLIA ----------
-  st.ricetteScartate=st.ricetteScartate||{manuali:[],ingredienti:[],eccezioni:[]};
-  st.ricetteScartate.manuali=st.ricetteScartate.manuali||[];
-  st.ricetteScartate.ingredienti=st.ricetteScartate.ingredienti||[];
-  st.ricetteScartate.eccezioni=st.ricetteScartate.eccezioni||[];
-  st.ricetteScartate.famiglie=st.ricetteScartate.famiglie||[];
-  st.ricetteScartate.singoleEsplicite=st.ricetteScartate.singoleEsplicite||st.ricetteScartate.manuali.slice();
+  function ensureScarti117(){
+    st.ricetteScartate=st.ricetteScartate||{};
+    st.ricetteScartate.manuali=Array.isArray(st.ricetteScartate.manuali)?st.ricetteScartate.manuali:[];
+    st.ricetteScartate.ingredienti=Array.isArray(st.ricetteScartate.ingredienti)?st.ricetteScartate.ingredienti:[];
+    st.ricetteScartate.eccezioni=Array.isArray(st.ricetteScartate.eccezioni)?st.ricetteScartate.eccezioni:[];
+    st.ricetteScartate.famiglie=Array.isArray(st.ricetteScartate.famiglie)?st.ricetteScartate.famiglie:[];
+    st.ricetteScartate.singoleEsplicite=Array.isArray(st.ricetteScartate.singoleEsplicite)?st.ricetteScartate.singoleEsplicite:st.ricetteScartate.manuali.slice();
+    return st.ricetteScartate;
+  }
+  ensureScarti117();
 
   function famKey(r){return String(r?.famiglia||N(r?.nome).replace(/[^a-z0-9]+/g,'_'))}
   function famLabel(key){const r=MASTER.find(x=>famKey(x)===key);return r?.nome||key.replace(/_/g,' ')}
@@ -40,9 +44,11 @@ function boot117(){
   const scartaSingolaPre117=window.scartaRicetta116;
   if(typeof scartaSingolaPre117==='function'){
     window.scartaRicetta116=function(id){
+      ensureScarti117();
       const prima=(st.ricetteScartate.manuali||[]).includes(id);
       scartaSingolaPre117(id);
       setTimeout(()=>{
+        ensureScarti117();
         if(!prima&&(st.ricetteScartate.manuali||[]).includes(id)&&!st.ricetteScartate.singoleEsplicite.includes(id)){
           st.ricetteScartate.singoleEsplicite.push(id);save();
         }
@@ -51,6 +57,7 @@ function boot117(){
   }
 
   window.scartaFamiglia117=function(id){
+    ensureScarti117();
     const r=MASTER.find(x=>x.id===id);if(!r)return;
     const key=famKey(r),label=famLabel(key);
     const ids=MASTER.filter(x=>famKey(x)===key).map(x=>x.id);
@@ -64,6 +71,7 @@ function boot117(){
     renderFamiglieScartate117();toast('Scartate tutte le versioni di '+label);
   };
   window.ripristinaFamiglia117=function(key){
+    ensureScarti117();
     const label=famLabel(key);if(!confirm('Ripristinare il tipo “'+label+'”? Gli scarti singoli e le regole per ingrediente resteranno attivi.'))return;
     st.ricetteScartate.famiglie=st.ricetteScartate.famiglie.filter(x=>x!==key);
     const explicit=new Set(st.ricetteScartate.singoleEsplicite||[]);
@@ -71,6 +79,16 @@ function boot117(){
     st.ricetteScartate.manuali=st.ricetteScartate.manuali.filter(id=>!ids.includes(id)||explicit.has(id));
     applicaScarti117();save();if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();if(typeof renderScartate116==='function')renderScartate116();renderFamiglieScartate117();toast('Tipo ripristinato');
   };
+  const ripristinaTuttePre117=window.ripristinaTutteScartate116;
+  if(typeof ripristinaTuttePre117==='function'){
+    window.ripristinaTutteScartate116=function(){
+      ripristinaTuttePre117();
+      ensureScarti117();
+      save();
+      renderFamiglieScartate117();
+    };
+  }
+
   function renderFamiglieScartate117(){
     const host=document.getElementById('v117FamiglieScartate');if(!host)return;
     const arr=st.ricetteScartate.famiglie||[];
