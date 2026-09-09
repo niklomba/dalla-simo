@@ -1,0 +1,75 @@
+  }
+  function keyItem117(x){return N(x.nome)+'|'+x.u}
+  function aggrega117(items){
+    const m=new Map();items.forEach(x=>{const k=keyItem117(x);if(!m.has(k))m.set(k,{...x});else if(x.u!=='q.b.')m.get(k).q+=x.q});return [...m.values()];
+  }
+  function compatU117(a,b){a=String(a||'').toLowerCase();b=String(b||'').toLowerCase();if(a===b)return true;return [['g','kg'],['ml','l']].some(z=>z.includes(a)&&z.includes(b))}
+  function conv117(qty,from,to){from=String(from||'').toLowerCase();to=String(to||'').toLowerCase();qty=Number(qty)||0;if(from===to)return qty;if(from==='kg'&&to==='g')return qty*1000;if(from==='g'&&to==='kg')return qty/1000;if(from==='l'&&to==='ml')return qty*1000;if(from==='ml'&&to==='l')return qty/1000;return NaN}
+  function pantryMatch117(nome){const n=N(nome);return (st.dispensa||[]).find(x=>{const z=N(x.nome);return z===n||z.includes(n)||n.includes(z)})}
+  function shopMatch117(nome,u){const n=N(nome);return (st.spesa||[]).find(x=>x.stato==='da_comprare'&&N(x.nome)===n&&compatU117(x.unita,u))}
+  function pulisciVecchiaDietaGenerica117(){
+    st.spesa=(st.spesa||[]).filter(x=>{
+      const ori=x.origini||[];const soloDieta=ori.length&&ori.every(o=>String(o).startsWith('Dieta Simona'));
+      return !(soloDieta&&String(x.unita)==='confezione');
+    });
+  }
+  function aggiungiQuantitaSpesa117(items,origine){
+    pulisciVecchiaDietaGenerica117();
+    let aggiunti=0,coperti=0,parziali=0;
+    aggrega117(items).forEach(it=>{
+      let need=it.q;const pan=pantryMatch117(it.nome);let notaDisp='';
+      if(pan){
+        if(it.u==='q.b.'){coperti++;return}
+        if(compatU117(pan.unita,it.u)){
+          const avail=conv117(pan.quantita,pan.unita,it.u);
+          if(Number.isFinite(avail)&&avail>=need){coperti++;return}
+          if(Number.isFinite(avail)&&avail>0){need=Math.max(0,need-avail);parziali++;notaDisp=' · DISPENSA '+pan.quantita+' '+pan.unita}
+        }else notaDisp=' · DISPENSA presente, quantità da verificare';
+      }
+      if(need<=0)return;
+      let ex=shopMatch117(it.nome,it.u);
+      if(ex){
+        ex.quantitaOrigini=ex.quantitaOrigini||{};
+        const old=Number(ex.quantitaOrigini[origine]||0);
+        if(old)ex.quantita=Math.max(0,Number(ex.quantita||0)-old);
+        const add=it.u==='q.b.'?1:need;
+        ex.quantita=it.u==='q.b.'?1:Number(ex.quantita||0)+add;
+        ex.quantitaOrigini[origine]=add;
+        ex.origini=ex.origini||[];if(!ex.origini.includes(origine+notaDisp))ex.origini.push(origine+notaDisp);
+      }else{
+        const add=it.u==='q.b.'?1:need;
+        st.spesa.push({id:'s'+Date.now()+Math.random().toString(16).slice(2,6),nome:it.nome,quantita:add,unita:it.u,stato:'da_comprare',origini:[origine+notaDisp],quantitaOrigini:{[origine]:add}});aggiunti++;
+      }
+    });
+    save();if(typeof renderSpesa==='function')renderSpesa();toast('Dieta aggiornata in Spesa · '+aggiunti+' voci nuove'+(coperti?' · '+coperti+' coperte da DISPENSA':'')+(parziali?' · '+parziali+' quantità ridotte':'') );
+  }
+  const formatoPre117=window.formatoQuantita;
+  if(typeof formatoPre117==='function')window.formatoQuantita=function(qt,u){if(u==='q.b.')return 'q.b.';return formatoPre117(qt,u)};
+
+  window.compraDietaGiorno117=function(g){aggiungiQuantitaSpesa117(giornoItems117(g),'Dieta Simona · '+g+' · quantità v1.17')};
+  window.compraDietaSettimana117=function(){aggiungiQuantitaSpesa117(GIORNI.flatMap(g=>giornoItems117(g)),'Dieta Simona · settimana · quantità v1.17')};
+  // I pulsanti v1.16 già presenti chiamano questi nomi: li ricolleghiamo alla logica quantitativa v1.17.
+  window.compraDietaGiorno116=window.compraDietaGiorno117;
+  window.compraDietaSettimana116=window.compraDietaSettimana117;
+
+  function riepilogoAcquisto117(){
+    const items=aggrega117(GIORNI.flatMap(g=>giornoItems117(g)));
+    const numeric=items.filter(x=>x.u!=='q.b.');
+    return numeric.map(x=>'<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--border)"><span>'+H(x.nome)+'</span><b>'+x.q+' '+H(x.u)+'</b></div>').join('');
+  }
+  window.apriRiepilogoDieta117=function(){openModal('Riepilogo quantità dieta Simona','<div class="note">Quantità aggregate secondo le alternative attualmente selezionate. Gli alimenti indicati q.b. nel piano restano q.b. e non vengono inventate quantità.</div>'+riepilogoAcquisto117()+'<button class="btn full" style="margin-top:12px" onclick="compraDietaSettimana117();closeModal()">🛒 Compra tutta la dieta con queste quantità</button>')};
+
+  // Augment menu after v1.16 rendering
+  const renderSettimanaPre117=window.renderSettimana;
+  window.renderSettimana=function(){if(typeof renderSettimanaPre117==='function')renderSettimanaPre117();montaScelteQuantita117();const box=document.getElementById('v116AlternativeSimona');if(box&&!document.getElementById('v117RiepBtn')){const b=document.createElement('button');b.id='v117RiepBtn';b.className='btn full secondary';b.style.marginTop='8px';b.textContent='📦 Vedi quantità totali della dieta';b.onclick=apriRiepilogoDieta117;box.appendChild(b)}};
+  try{window.renderSettimana()}catch(e){}
+
+  // Augment Simona modal with explicit source-grounded note and weekly reset.
+  const dettagliPre117=window.dettagliSimona113;
+  if(typeof dettagliPre117==='function')window.dettagliSimona113=function(){dettagliPre117();const mb=document.getElementById('mb');if(!mb)return;const d=document.createElement('div');d.className='note';d.style.margin='10px 0';d.innerHTML='<b>Quantità acquisto:</b> il carrello somma le quantità numeriche del piano e usa le alternative selezionate giorno per giorno. Le voci indicate <b>q.b.</b> restano q.b. perché il piano non assegna un numero.<div class="grid2" style="margin-top:8px"><button class="btn secondary" onclick="ripristinaAlternativeBase117()">Ripristina alternative base</button><button class="btn secondary" onclick="apriRiepilogoDieta117()">Riepilogo quantità</button></div>';mb.insertBefore(d,mb.children[1]||null)};
+
+  save();
+  console.log('Dalla Simo v1.17 attiva');
+}
+boot117();
+})();
