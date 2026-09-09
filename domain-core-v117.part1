@@ -1,0 +1,94 @@
+// Dalla Simo v1.17 — scarto per famiglia ricetta + acquisto dieta con quantità reali aggregate
+(function(){
+'use strict';
+function boot117(){
+  if(typeof st==='undefined'||typeof RICETTE==='undefined'||typeof save!=='function'||typeof openModal!=='function'){
+    return setTimeout(boot117,120);
+  }
+  const H=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const N=v=>String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  const GIORNI=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+  const MASTER=window.__DALLA_SIMO_MASTER_116||RICETTE.slice();
+  const simona=(st.membri||[]).find(m=>N(m.nome)==='simona');
+  const sid=simona?.id||'m2';
+
+  document.title='App Alimentazione — Dalla Simo v1.17';
+  const sub=document.querySelector('.brand-subtitle');if(sub)sub.textContent='Alimentazione familiare · v1.17';
+
+  // ---------- 1) SCARTO DI TUTTE LE RICETTE DELLO STESSO TIPO/FAMIGLIA ----------
+  st.ricetteScartate=st.ricetteScartate||{manuali:[],ingredienti:[],eccezioni:[]};
+  st.ricetteScartate.manuali=st.ricetteScartate.manuali||[];
+  st.ricetteScartate.ingredienti=st.ricetteScartate.ingredienti||[];
+  st.ricetteScartate.eccezioni=st.ricetteScartate.eccezioni||[];
+  st.ricetteScartate.famiglie=st.ricetteScartate.famiglie||[];
+  st.ricetteScartate.singoleEsplicite=st.ricetteScartate.singoleEsplicite||st.ricetteScartate.manuali.slice();
+
+  function famKey(r){return String(r?.famiglia||N(r?.nome).replace(/[^a-z0-9]+/g,'_'))}
+  function famLabel(key){const r=MASTER.find(x=>famKey(x)===key);return r?.nome||key.replace(/_/g,' ')}
+  function matchIng(r,t){t=N(t);return (r.ingredienti||[]).some(i=>N(i).includes(t)||t.includes(N(i)))||N(r.nome).includes(t)}
+  function scartata117(r){
+    const x=st.ricetteScartate;
+    if((x.eccezioni||[]).includes(r.id))return false;
+    if((x.manuali||[]).includes(r.id))return true;
+    if((x.famiglie||[]).includes(famKey(r)))return true;
+    return (x.ingredienti||[]).some(t=>matchIng(r,t));
+  }
+  function applicaScarti117(){RICETTE.splice(0,RICETTE.length,...MASTER.filter(r=>!scartata117(r)))}
+  applicaScarti117();
+
+  // Registra i futuri scarti singoli come espliciti, così ripristinare una famiglia non li riattiva per errore.
+  const scartaSingolaPre117=window.scartaRicetta116;
+  if(typeof scartaSingolaPre117==='function'){
+    window.scartaRicetta116=function(id){
+      const prima=(st.ricetteScartate.manuali||[]).includes(id);
+      scartaSingolaPre117(id);
+      setTimeout(()=>{
+        if(!prima&&(st.ricetteScartate.manuali||[]).includes(id)&&!st.ricetteScartate.singoleEsplicite.includes(id)){
+          st.ricetteScartate.singoleEsplicite.push(id);save();
+        }
+      },50);
+    };
+  }
+
+  window.scartaFamiglia117=function(id){
+    const r=MASTER.find(x=>x.id===id);if(!r)return;
+    const key=famKey(r),label=famLabel(key);
+    const ids=MASTER.filter(x=>famKey(x)===key).map(x=>x.id);
+    if(!confirm('Scartare TUTTE le ricette/versioni del tipo “'+label+'”? Potrai ripristinarle dalla sezione Ricette scartate.'))return;
+    if(!st.ricetteScartate.famiglie.includes(key))st.ricetteScartate.famiglie.push(key);
+    ids.forEach(x=>{if(!st.ricetteScartate.manuali.includes(x))st.ricetteScartate.manuali.push(x)});
+    st.ricetteScartate.eccezioni=st.ricetteScartate.eccezioni.filter(x=>!ids.includes(x));
+    applicaScarti117();save();closeModal();
+    if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();if(typeof renderSettimana==='function')renderSettimana();
+    if(typeof renderScartate116==='function')renderScartate116();
+    renderFamiglieScartate117();toast('Scartate tutte le versioni di '+label);
+  };
+  window.ripristinaFamiglia117=function(key){
+    const label=famLabel(key);if(!confirm('Ripristinare il tipo “'+label+'”? Gli scarti singoli e le regole per ingrediente resteranno attivi.'))return;
+    st.ricetteScartate.famiglie=st.ricetteScartate.famiglie.filter(x=>x!==key);
+    const explicit=new Set(st.ricetteScartate.singoleEsplicite||[]);
+    const ids=MASTER.filter(x=>famKey(x)===key).map(x=>x.id);
+    st.ricetteScartate.manuali=st.ricetteScartate.manuali.filter(id=>!ids.includes(id)||explicit.has(id));
+    applicaScarti117();save();if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();if(typeof renderScartate116==='function')renderScartate116();renderFamiglieScartate117();toast('Tipo ripristinato');
+  };
+  function renderFamiglieScartate117(){
+    const host=document.getElementById('v117FamiglieScartate');if(!host)return;
+    const arr=st.ricetteScartate.famiglie||[];
+    host.innerHTML=arr.length?arr.map(k=>'<span class="v116-excluded">Tipo: '+H(famLabel(k))+' <button class="star" style="font-size:14px" onclick="ripristinaFamiglia117(\''+H(k)+'\')">×</button></span>').join(''):'<span class="tiny">Nessun tipo di ricetta escluso.</span>';
+  }
+  function montaFamiglieScartate117(){
+    const sec=document.getElementById('scartate');if(!sec)return;
+    if(!document.getElementById('v117FamiglieBox')){
+      const box=document.createElement('div');box.id='v117FamiglieBox';box.className='card';box.innerHTML='<h3>Tipi di ricetta scartati</h3><div class="meta">Qui compaiono le famiglie/versioni di ricetta scartate in blocco.</div><div id="v117FamiglieScartate" style="margin-top:8px"></div>';
+      const first=sec.querySelector('.card.hero');if(first)first.insertAdjacentElement('afterend',box);else sec.prepend(box);
+    }
+    renderFamiglieScartate117();
+  }
+  montaFamiglieScartate117();
+  const renderScartatePre117=window.renderScartate116;
+  if(typeof renderScartatePre117==='function')window.renderScartate116=function(){renderScartatePre117();montaFamiglieScartate117();renderFamiglieScartate117()};
+
+  const openRecipePre117=window.openRecipe;
+  window.openRecipe=function(id){
+    if(typeof openRecipePre117==='function')openRecipePre117(id);
+    const mb=document.getElementById('mb');const r=MASTER.find(x=>x.id===id);if(!mb||!r)return;
