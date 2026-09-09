@@ -251,6 +251,60 @@ function boot117(){
   const dettagliPre117=window.dettagliSimona113;
   if(typeof dettagliPre117==='function')window.dettagliSimona113=function(){dettagliPre117();const mb=document.getElementById('mb');if(!mb)return;const d=document.createElement('div');d.className='note';d.style.margin='10px 0';d.innerHTML='<b>Quantità acquisto:</b> il carrello somma le quantità numeriche del piano e usa le alternative selezionate giorno per giorno. Le voci indicate <b>q.b.</b> restano q.b. perché il piano non assegna un numero.<div class="grid2" style="margin-top:8px"><button class="btn secondary" onclick="ripristinaAlternativeBase117()">Ripristina alternative base</button><button class="btn secondary" onclick="apriRiepilogoDieta117()">Riepilogo quantità</button></div>';mb.insertBefore(d,mb.children[1]||null)};
 
+  // ---------- 4) BACKUP / IMPORT: VERSIONE + SCHEMA FAIL-CLOSED, RETROCOMPATIBILE v1 ----------
+  const ENVELOPE_VERSION_117=2;
+  const SUPPORTED_ENVELOPE_VERSIONS_117=new Set([1,2]);
+  function isObj117(v){return !!v&&typeof v==='object'&&!Array.isArray(v)}
+  function validaVersione117(obj,label){
+    const v=Number(obj?.versione);
+    if(!Number.isInteger(v)||!SUPPORTED_ENVELOPE_VERSIONS_117.has(v))throw new Error(label+' con versione non supportata');
+    return v;
+  }
+  function validaBackup117(obj){
+    if(!isObj117(obj)||obj.tipo!=='APP_ALIMENTAZIONE_BACKUP_COMPLETO'||!isObj117(obj.dati))throw new Error('Il file non è un backup completo valido');
+    validaVersione117(obj,'Backup');
+    const d=obj.dati;
+    if(!Array.isArray(d.membri)||!d.membri.every(m=>isObj117(m)&&typeof m.nome==='string'))throw new Error('Backup incompatibile: profili famiglia non validi');
+    for(const k of ['spesa','dispensa','avanzi','registro'])if(d[k]!=null&&!Array.isArray(d[k]))throw new Error('Backup incompatibile: '+k+' non valido');
+    if(d.planner!=null&&!isObj117(d.planner))throw new Error('Backup incompatibile: planner non valido');
+    return obj;
+  }
+  function validaListaSpesa117(obj){
+    if(!isObj117(obj)||obj.tipo!=='APP_ALIMENTAZIONE_LISTA_SPESA'||!Array.isArray(obj.spesa))throw new Error('Il file non è una lista spesa valida');
+    validaVersione117(obj,'Lista spesa');
+    const bad=obj.spesa.some(x=>!isObj117(x)||typeof x.nome!=='string'||!x.nome.trim()||(x.quantita!=null&&(!Number.isFinite(Number(x.quantita))||Number(x.quantita)<0))||(x.unita!=null&&typeof x.unita!=='string'));
+    if(bad)throw new Error('Lista spesa incompatibile: una o più voci non sono valide');
+    return obj;
+  }
+  if(typeof scaricaJson==='function'){
+    window.esportaBackupCompleto=function(){
+      scaricaJson('APP_ALIMENTAZIONE_BACKUP_COMPLETO_'+dataFile()+'.json',{tipo:'APP_ALIMENTAZIONE_BACKUP_COMPLETO',versione:ENVELOPE_VERSION_117,creato_il:new Date().toISOString(),dati:st});
+      toast('Backup completo creato');
+    };
+    window.esportaListaSpesa=function(){
+      scaricaJson('APP_ALIMENTAZIONE_LISTA_SPESA_'+dataFile()+'.json',{tipo:'APP_ALIMENTAZIONE_LISTA_SPESA',versione:ENVELOPE_VERSION_117,creato_il:new Date().toISOString(),spesa:st.spesa});
+      toast('File della lista spesa creato');
+    };
+  }
+  if(typeof FileReader!=='undefined'&&typeof openModal==='function'){
+    window.leggiFileImport=function(ev){
+      const f=ev.target.files&&ev.target.files[0];if(!f)return;
+      const rd=new FileReader();
+      rd.onload=()=>{try{
+        const obj=JSON.parse(rd.result);
+        if(tipoImportAtteso==='backup'){
+          validaBackup117(obj);importazioneInAttesa=obj;
+          openModal('Importa backup completo','<div class="note">Backup verificato. Il file sostituirà i dati presenti su questo dispositivo. Prima dell’importazione puoi esportare un backup dello stato attuale.</div><button class="btn full" style="margin-top:12px" onclick="applicaBackup()">Sostituisci con questo backup</button>');
+        }else{
+          validaListaSpesa117(obj);importazioneInAttesa=obj;
+          openModal('Importa lista spesa','<p class="meta">File verificato. Come vuoi importare la lista?</p><button class="btn full" onclick="applicaSpesaImportata(\'unisci\')">Unisci alla lista attuale</button><button class="btn full secondary" style="margin-top:8px" onclick="applicaSpesaImportata(\'sostituisci\')">Sostituisci la lista attuale</button>');
+        }
+      }catch(e){importazioneInAttesa=null;toast('Importazione non riuscita: '+e.message)}};
+      rd.onerror=()=>{importazioneInAttesa=null;toast('Importazione non riuscita: lettura file')};
+      rd.readAsText(f,'utf-8');
+    };
+  }
+
   save();
   console.log('Dalla Simo v1.17 attiva');
 }
