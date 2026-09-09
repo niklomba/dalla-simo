@@ -1,0 +1,71 @@
+    if(!document.getElementById('v117ScartaFamigliaBtn')){
+      const b=document.createElement('button');b.id='v117ScartaFamigliaBtn';b.className='btn full danger';b.style.marginTop='8px';b.textContent='⛔ Scarta tutte le versioni di questo tipo';b.onclick=()=>scartaFamiglia117(id);mb.appendChild(b);
+    }
+  };
+
+  // ---------- 2) DIETA SIMONA: ALTERNATIVE BASE DEL PIANO + SCELTE OPERATIVE ----------
+  const ALT_BASE={
+    'Lunedì':{Spuntino:1,Merenda:1},'Martedì':{Spuntino:2,Merenda:2},'Mercoledì':{Spuntino:1,Merenda:4},
+    'Giovedì':{Spuntino:2,Merenda:3},'Venerdì':{Spuntino:1,Merenda:1},'Sabato':{Spuntino:2,Merenda:2},'Domenica':{Spuntino:1,Merenda:4}
+  };
+  st.simonaAlternative=st.simonaAlternative||{};
+  GIORNI.forEach(g=>{st.simonaAlternative[g]=st.simonaAlternative[g]||{};if(!st.simonaAlternative[g].Spuntino)st.simonaAlternative[g].Spuntino=ALT_BASE[g].Spuntino;if(!st.simonaAlternative[g].Merenda)st.simonaAlternative[g].Merenda=ALT_BASE[g].Merenda});
+  st.simonaScelteDettaglio117=st.simonaScelteDettaglio117||{};
+  GIORNI.forEach(g=>{st.simonaScelteDettaglio117[g]=st.simonaScelteDettaglio117[g]||{spuntinoBase:'yogurt',merendaFrutta:'frutto_medio'}});
+
+  const SP_BASE={yogurt:{label:'Yogurt greco 150 g',nome:'Yogurt greco',q:150,u:'g'},kefir:{label:'Kefir 300 g',nome:'Kefir',q:300,u:'g'}};
+  const FR_BASE={
+    frutto_medio:{label:'1 frutto medio',nome:'Frutta',q:1,u:'pezzi'},
+    frutti_piccoli:{label:'2 frutti piccoli',nome:'Frutta piccola',q:2,u:'pezzi'},
+    frutti_bosco:{label:'Frutti di bosco 100 g',nome:'Frutti di bosco',q:100,u:'g'},
+    frutta_stagione:{label:'Frutta di stagione 150 g',nome:'Frutta di stagione',q:150,u:'g'}
+  };
+  window.cambiaDettaglioSimona117=function(g,k,v){st.simonaScelteDettaglio117[g]=st.simonaScelteDettaglio117[g]||{};st.simonaScelteDettaglio117[g][k]=v;save();toast('Scelta di '+g+' aggiornata')};
+  window.ripristinaAlternativeBase117=function(){
+    if(!confirm('Ripristinare spuntini e merende come nell’esempio settimanale allegato?'))return;
+    GIORNI.forEach(g=>{st.simonaAlternative[g]={Spuntino:ALT_BASE[g].Spuntino,Merenda:ALT_BASE[g].Merenda};st.simonaScelteDettaglio117[g]={spuntinoBase:'yogurt',merendaFrutta:'frutto_medio'}});save();if(typeof renderSettimana==='function')renderSettimana();toast('Alternative base ripristinate come da piano');
+  };
+  function dettagliScelteHtml117(g){
+    const d=st.simonaScelteDettaglio117[g]||{};
+    return '<div class="v116-alt"><b>Scelta quantità Spuntino</b><div class="tiny">Il piano consente yogurt oppure kefir. La base app usa la prima opzione e puoi cambiarla.</div><select class="search" onchange="cambiaDettaglioSimona117(\''+g+'\',\'spuntinoBase\',this.value)">'+Object.entries(SP_BASE).map(([k,v])=>'<option value="'+k+'" '+(d.spuntinoBase===k?'selected':'')+'>'+H(v.label)+'</option>').join('')+'</select></div>'+ 
+      '<div class="v116-alt"><b>Scelta frutta Merenda</b><div class="tiny">Il piano consente quattro forme equivalenti di frutta. La base app usa 1 frutto medio.</div><select class="search" onchange="cambiaDettaglioSimona117(\''+g+'\',\'merendaFrutta\',this.value)">'+Object.entries(FR_BASE).map(([k,v])=>'<option value="'+k+'" '+(d.merendaFrutta===k?'selected':'')+'>'+H(v.label)+'</option>').join('')+'</select></div>';
+  }
+  function montaScelteQuantita117(){
+    const box=document.getElementById('v116AlternativeSimona');if(!box)return;
+    const g=GIORNI.includes(st.giornoPlanner)?st.giornoPlanner:'Lunedì';
+    let x=document.getElementById('v117ScelteQuantita');if(!x){x=document.createElement('div');x.id='v117ScelteQuantita';box.appendChild(x)}
+    x.innerHTML='<div class="card"><div class="row between"><div><h3>Quantità acquisto · '+H(g)+'</h3><div class="meta">Le alternative 1/2/3/4 seguono il piano. Qui scegli solo quale voce “oppure” usare per calcolare la spesa.</div></div><button class="btn small secondary" onclick="ripristinaAlternativeBase117()">Base allegato</button></div>'+dettagliScelteHtml117(g)+'</div>';
+  }
+
+  // ---------- 3) PIANO STRUTTURATO PER ACQUISTO: QUANTITÀ DAL PIANO ----------
+  function qb(nome){return {nome,q:1,u:'q.b.'}}
+  function q(nome,n,u='g'){return {nome,q:n,u}}
+  const PASTI_BASE={
+    'Lunedì':[q('Mozzarella',100),qb('Pomodori'),qb('Basilico'),qb('Spinaci'),q('Merluzzo',150),qb('Finocchi'),q('Pane',70)],
+    'Martedì':[q('Pollo',120),qb('Zucchine'),q('Uova',2,'pezzi'),qb('Verdure per frittata'),q('Pane',70)],
+    'Mercoledì':[q('Carne di manzo',120),qb('Spinaci'),q('Orzo o farro',60),q('Piselli',120),qb('Fagiolini')],
+    'Giovedì':[q('Bresaola',50),qb('Valeriana'),qb('Pomodorini'),q('Fiori d’acqua',12,'pezzi'),q('Orata',150),qb('Finocchi')],
+    'Venerdì':[q('Ceci',120),qb('Verdure miste'),q('Gallette',5,'pezzi'),q('Uova',2,'pezzi'),qb('Cetrioli')],
+    'Sabato':[q('Gnocchi di patate',120),q('Mozzarella',100),qb('Sugo di pomodoro'),qb('Finocchi'),q('Branzino',150),qb('Verdure da grigliare')],
+    'Domenica':[q('Riso',60),q('Tonno',150),qb('Sottaceti'),qb('Barbabietola'),q('Carne di manzo',120),qb('Carote')]
+  };
+  // Olio: il piano indica 20 g TOTALI al giorno, quindi non viene duplicato tra pranzo e cena.
+  function snackItems117(g){
+    const n=Number(st.simonaAlternative?.[g]?.Spuntino||ALT_BASE[g].Spuntino);
+    const d=st.simonaScelteDettaglio117[g]||{};const base=SP_BASE[d.spuntinoBase]||SP_BASE.yogurt;
+    const out=[q(base.nome,base.q,base.u)];
+    if(n===1)out.push(q('Cioccolato fondente 80–85%',20));else out.push(q('Frutta secca',20));
+    return out;
+  }
+  function merendaItems117(g){
+    const n=Number(st.simonaAlternative?.[g]?.Merenda||ALT_BASE[g].Merenda);
+    const d=st.simonaScelteDettaglio117[g]||{};const fr=FR_BASE[d.merendaFrutta]||FR_BASE.frutto_medio;
+    const out=[q(fr.nome,fr.q,fr.u)];
+    if(n===1)out.push(q('Grana Padano o Parmigiano Reggiano',20));
+    if(n===2)out.push(q('Olive verdi giganti con nocciolo',60));
+    if(n===3)out.push(q('Cioccolato fondente 80–85%',15));
+    if(n===4)out.push(q('Frutta secca',15));
+    return out;
+  }
+  function giornoItems117(g){
+    return [q('Latte parzialmente scremato',100),qb('Caffè senza zucchero'),q('Olio extravergine di oliva',20),...snackItems117(g),...merendaItems117(g),...(PASTI_BASE[g]||[])];
