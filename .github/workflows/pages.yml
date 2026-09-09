@@ -26,6 +26,7 @@ jobs:
           test -s domain-core-v117.part1
           test -s domain-core-v117.part2
           test -s domain-core-v117.part3
+          test -s domain-core-v117-discard-ui.js
           test -s brand-v111-512.png
           test -s icon-192-v112.png
           test -s icon-512-v112.png
@@ -35,6 +36,7 @@ jobs:
           node --check domain-core-v114.js
           node --check domain-core-v116.js
           node --check domain-core-v117.js
+          node --check domain-core-v117-discard-ui.js
 
           cat > domain-core.js <<'JS'
           // Loader Dalla Simo v1.17 — patch classiche nello stesso ambiente globale della pagina
@@ -53,6 +55,7 @@ jobs:
               .then(()=>carica('./domain-core-v114.js?v=117'))
               .then(()=>carica('./domain-core-v116.js?v=117'))
               .then(()=>carica('./domain-core-v117.js?v=117'))
+              .then(()=>carica('./domain-core-v117-discard-ui.js?v=117'))
               .then(()=>{
                 document.title='App Alimentazione — Dalla Simo v1.17';
                 const sub=document.querySelector('.brand-subtitle');
@@ -77,8 +80,8 @@ jobs:
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v117-20260909';
-          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
+          const C='dalla-simo-v117-20260909-discard-ui';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-discard-ui.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
           self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
@@ -90,10 +93,13 @@ jobs:
           set -euo pipefail
           node --check domain-core.js
           node --check domain-core-v117.js
+          node --check domain-core-v117-discard-ui.js
           grep -q 'Dalla Simo v1.17' index.html
           grep -q 'domain-core.js?v=117' index.html
           grep -q 'domain-core-v117.js?v=117' domain-core.js
-          grep -q 'Scarta tutte le versioni di questo tipo' domain-core-v117.js
+          grep -q 'domain-core-v117-discard-ui.js?v=117' domain-core.js
+          grep -q 'data-v117-discard-id' domain-core-v117-discard-ui.js
+          grep -q 'Scarto multiplo disattivato' domain-core-v117-discard-ui.js
           grep -q 'ALT_BASE' domain-core-v117.js
           grep -q "'Lunedì':{Spuntino:1,Merenda:1}" domain-core-v117.js
           grep -q "'Mercoledì':{Spuntino:1,Merenda:4}" domain-core-v117.js
@@ -110,7 +116,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html domain-core.js domain-core-v117.js service-worker.js
+          git add index.html domain-core.js domain-core-v117.js domain-core-v117-discard-ui.js service-worker.js
           if git diff --cached --quiet; then
             echo "v1.17 già aggiornata"
             exit 0
