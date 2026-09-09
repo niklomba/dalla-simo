@@ -1,0 +1,60 @@
+ window.rimuoviRegolaIngrediente116=function(t){
+    st.ricetteScartate.ingredienti=st.ricetteScartate.ingredienti.filter(x=>x!==t);applicaScarti116();save();renderScartate116();if(typeof renderRicette==='function')renderRicette();
+  };
+  window.ripristinaTutteScartate116=function(){
+    if(!confirm('Ripristinare TUTTE le ricette scartate e cancellare tutte le regole per ingrediente?'))return;
+    st.ricetteScartate={manuali:[],ingredienti:[],eccezioni:[]};applicaScarti116();save();renderScartate116();if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();toast('Tutte le ricette sono state ripristinate');
+  };
+
+  function montaScartate116(){
+    const main=document.querySelector('main');if(!main||document.getElementById('scartate'))return;
+    const sec=document.createElement('section');sec.id='scartate';sec.className='screen';sec.innerHTML=`
+      <div class="sub">Archivio separato</div><h1>Ricette scartate</h1>
+      <div class="card hero"><h3>Scarta per ingrediente</h3><div class="meta">Esempio: scrivi “ricotta” per non vedere più le ricette che la contengono.</div><div class="row" style="margin-top:10px"><input id="v116IngredienteScarto" class="search" placeholder="Es. ricotta" style="flex:1"><button class="btn danger" onclick="scartaIngrediente116()">Scarta</button></div><div id="v116RegoleScarto" style="margin-top:8px"></div></div>
+      <div class="row between" style="margin:10px 0"><button class="btn secondary" onclick="showScreenById('ricette')">← Ricette</button><button class="btn danger" onclick="ripristinaTutteScartate116()">Ripristina tutte</button></div>
+      <div id="v116ListaScartate"></div>`;
+    main.appendChild(sec);
+    const ric=document.getElementById('ricette');if(ric&&!document.getElementById('v116DiscardBar')){
+      const b=document.createElement('div');b.id='v116DiscardBar';b.className='card';b.innerHTML='<div class="row between"><div><h3>⛔ Ricette scartate</h3><div class="meta">Nascondi ricette singole o tutte quelle con un ingrediente che non interessa.</div></div><button class="btn small secondary" onclick="showScreenById(\'scartate\');renderScartate116()"><span id="v116ScartiCount">0</span> Apri</button></div>';
+      const h=ric.querySelector('h1');if(h)h.insertAdjacentElement('afterend',b);else ric.prepend(b);
+    }
+  }
+  window.renderScartate116=function(){
+    const list=document.getElementById('v116ListaScartate');if(!list)return;
+    const rules=document.getElementById('v116RegoleScarto');
+    if(rules)rules.innerHTML=(st.ricetteScartate.ingredienti||[]).map(t=>'<span class="v116-excluded">'+H(t)+' <button class="star" style="font-size:14px" onclick="rimuoviRegolaIngrediente116(\''+H(t)+'\')">×</button></span>').join('')||'<span class="tiny">Nessuna regola per ingrediente.</span>';
+    const arr=MASTER.filter(eScartata);
+    const c=document.getElementById('v116ScartiCount');if(c)c.textContent=arr.length;
+    list.innerHTML=arr.length?arr.map(r=>'<div class="card"><div class="row between"><div><div class="recipe-title">'+H(r.nome)+' · '+H(r.variante)+'</div><div class="meta">'+r.minuti+' min · '+H(r.difficolta)+'</div></div><button class="btn small" onclick="ripristinaRicetta116(\''+r.id+'\')">Ripristina</button></div></div>').join(''):'<div class="card empty">Nessuna ricetta scartata.</div>';
+  };
+  montaScartate116();renderScartate116();
+
+  // Aggiunge il comando Scarta alla scheda di ogni ricetta.
+  const openRecipePre116=window.openRecipe;
+  window.openRecipe=function(id){
+    if(typeof openRecipePre116==='function')openRecipePre116(id);
+    const mb=document.getElementById('mb');if(mb&&!document.getElementById('v116ScartaRicettaBtn')){
+      const b=document.createElement('button');b.id='v116ScartaRicettaBtn';b.className='btn full danger';b.style.marginTop='12px';b.textContent='⛔ Scarta questa ricetta';b.onclick=()=>scartaRicetta116(id);mb.appendChild(b);
+    }
+  };
+
+  // --- preferiti visibili/modificabili nel menu Famiglia ---
+  const toggleFavPre116=window.toggleFav;
+  window.toggleFav=function(idm,idr){
+    if(st.preferitiAzzerati?.[idm])st.preferitiAzzerati[idm]=false;
+    if(typeof toggleFavPre116==='function')toggleFavPre116(idm,idr);
+    if(typeof renderMembri==='function')renderMembri();
+  };
+  window.rimuoviPreferito116=function(mid,rid){
+    const m=(st.membri||[]).find(x=>x.id===mid);if(!m)return;m.preferiti=(m.preferiti||[]).filter(x=>x!==rid);if(!m.preferiti.length)st.preferitiAzzerati[mid]=true;save();renderMembri();if(typeof renderPreferiti==='function')renderPreferiti();if(typeof renderConsigli==='function')renderConsigli();
+  };
+  window.azzeraPreferiti116=function(mid){
+    const m=(st.membri||[]).find(x=>x.id===mid);if(!m)return;if(!confirm('Azzerare tutti i preferiti di '+m.nome+'?'))return;m.preferiti=[];st.preferitiAzzerati[mid]=true;save();renderMembri();if(typeof renderPreferiti==='function')renderPreferiti();if(typeof renderConsigli==='function')renderConsigli();toast('Preferiti di '+m.nome+' azzerati');
+  };
+  window.azzeraTuttiPreferiti116=function(){
+    if(!confirm('Azzerare i preferiti di TUTTA la famiglia?'))return;(st.membri||[]).forEach(m=>{m.preferiti=[];st.preferitiAzzerati[m.id]=true});save();renderMembri();if(typeof renderPreferiti==='function')renderPreferiti();if(typeof renderConsigli==='function')renderConsigli();toast('Tutti i preferiti sono stati azzerati');
+  };
+
+  window.resetRegistro116=function(){if(confirm('Azzerare tutto il registro dei pasti?')){st.registro=[];save();if(typeof renderRegistro==='function')renderRegistro();if(typeof renderConsigli==='function')renderConsigli();toast('Registro pasti azzerato')}};
+  window.resetDispensa116=function(){if(confirm('Svuotare completamente dispensa e avanzi?')){st.dispensa=[];st.avanzi=[];save();if(typeof renderDispensa==='function')renderDispensa();toast('Dispensa azzerata')}};
+  window.resetSpesa116=function(){if(confirm('Svuotare completamente la lista della spesa, compresi i comprati?')){st.spesa=[]
