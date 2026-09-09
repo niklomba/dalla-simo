@@ -104,7 +104,7 @@ function bootDiscardUi117(){
       const meta=card.querySelector('.meta');if(meta)meta.textContent='Cerca un ingrediente nel Ricettario e usa “Scarta” direttamente accanto alla ricetta che non vuoi più vedere.';
       input.closest('.row')?.remove();
       const rules=document.getElementById('v116RegoleScarto');
-      if(rules&&x.ingredienti.length){
+      if(rules&&x.ingredienti.length&&!card.querySelector('[data-v117-legacy-note]')){
         rules.insertAdjacentHTML('beforebegin','<div class="tiny" data-v117-legacy-note style="margin-top:8px">Regole per ingrediente create in versioni precedenti: puoi ancora rimuoverle qui sotto.</div>');
       }
     }
@@ -124,7 +124,6 @@ function bootDiscardUi117(){
   if(typeof renderScartatePreDiscard117==='function'){
     window.renderScartate116=function(){
       renderScartatePreDiscard117();
-      document.querySelectorAll('[data-v117-legacy-note]').forEach((n,i)=>{if(i)n.remove()});
       pulisciUiScartoMassivo117();
     };
   }
