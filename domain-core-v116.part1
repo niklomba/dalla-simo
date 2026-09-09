@@ -1,0 +1,95 @@
+// Dalla Simo v1.16 — scanner, alternative dieta, preferiti, reset, ricette scartate e spesa riordinata
+(function(){
+'use strict';
+function boot116(){
+  if(typeof st==='undefined'||typeof RICETTE==='undefined'||typeof save!=='function'||typeof openModal!=='function'||typeof showScreenById!=='function'){
+    return setTimeout(boot116,120);
+  }
+  const H=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const N=v=>String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  const GIORNI=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+  const SPUNTINI={
+    1:'Yogurt greco bianco intero 5% 150 g oppure kefir bianco da bere 300 g + cioccolato fondente 80–85% 20 g',
+    2:'Yogurt greco bianco intero 5% 150 g oppure kefir bianco da bere 300 g + frutta secca 20 g'
+  };
+  const MERENDE={
+    1:'1 frutto medio oppure 2 piccoli oppure 100 g frutti di bosco oppure 150 g frutta di stagione + Grana Padano o Parmigiano Reggiano 20 g',
+    2:'1 frutto medio oppure 2 piccoli oppure 100 g frutti di bosco oppure 150 g frutta di stagione + olive verdi giganti con nocciolo 60 g',
+    3:'1 frutto medio oppure 2 piccoli oppure 100 g frutti di bosco oppure 150 g frutta di stagione + cioccolato fondente 15 g',
+    4:'1 frutto medio oppure 2 piccoli oppure 100 g frutti di bosco oppure 150 g frutta di stagione + frutta secca 15 g'
+  };
+  const simona=(st.membri||[]).find(m=>N(m.nome)==='simona');
+  const sid=simona?.id||'m2';
+
+  document.title='App Alimentazione — Dalla Simo v1.16';
+  const sub=document.querySelector('.brand-subtitle');if(sub)sub.textContent='Alimentazione familiare · v1.16';
+
+  if(!document.getElementById('v116css')){
+    const s=document.createElement('style');s.id='v116css';s.textContent=`
+      .v116-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+      .v116-fav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid var(--border)}
+      .v116-reset{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+      .v116-scan{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+      .v116-scan video{border-radius:16px!important}
+      .v116-alt{border:1px solid var(--border);background:#fff;border-radius:14px;padding:10px;margin:8px 0}
+      .v116-alt select{margin-top:7px}
+      .v116-discard{background:#fff3f1;color:var(--red);border:1px solid #efd2cf}
+      .v116-excluded{display:inline-flex;gap:6px;align-items:center;padding:6px 8px;margin:3px;border-radius:999px;background:#fff3f1;color:var(--red);font-size:11px}
+      .v116-shop-disp{font-size:10px;font-weight:900;color:var(--green);background:var(--green3);padding:3px 6px;border-radius:999px}
+      #reader116{width:100%;min-height:220px;margin-top:10px}
+      @media(max-width:420px){.v116-reset{grid-template-columns:1fr}}
+    `;document.head.appendChild(s);
+  }
+
+  // --- stato v1.16 ---
+  st.preferitiAzzerati=st.preferitiAzzerati||{};
+  st.ricetteScartate=st.ricetteScartate||{manuali:[],ingredienti:[],eccezioni:[]};
+  st.ricetteScartate.manuali=st.ricetteScartate.manuali||[];
+  st.ricetteScartate.ingredienti=st.ricetteScartate.ingredienti||[];
+  st.ricetteScartate.eccezioni=st.ricetteScartate.eccezioni||[];
+  st.simonaAlternative=st.simonaAlternative||{};
+  st.codiciProdotto=st.codiciProdotto||{};
+
+  // Se l'utente aveva azzerato i preferiti, impedisce ai vecchi seed dimostrativi di ricomparire al riavvio.
+  (st.membri||[]).forEach(m=>{if(st.preferitiAzzerati[m.id])m.preferiti=[]});
+
+  // --- ricette scartate: archivio master e filtro globale ---
+  if(!window.__DALLA_SIMO_MASTER_116)window.__DALLA_SIMO_MASTER_116=RICETTE.slice();
+  const MASTER=window.__DALLA_SIMO_MASTER_116;
+  function matchIngrediente(r,term){
+    term=N(term);if(!term)return false;
+    return (r.ingredienti||[]).some(i=>N(i).includes(term)||term.includes(N(i))) || N(r.nome).includes(term);
+  }
+  function eScartata(r){
+    const x=st.ricetteScartate;
+    if((x.eccezioni||[]).includes(r.id))return false;
+    if((x.manuali||[]).includes(r.id))return true;
+    return (x.ingredienti||[]).some(t=>matchIngrediente(r,t));
+  }
+  function applicaScarti116(){
+    const attive=MASTER.filter(r=>!eScartata(r));
+    RICETTE.splice(0,RICETTE.length,...attive);
+  }
+  applicaScarti116();
+
+  window.scartaRicetta116=function(id){
+    const r=MASTER.find(x=>x.id===id);if(!r)return;
+    if(!confirm('Scartare “'+r.nome+'”? Non verrà più proposta finché non la ripristini.'))return;
+    if(!st.ricetteScartate.manuali.includes(id))st.ricetteScartate.manuali.push(id);
+    st.ricetteScartate.eccezioni=st.ricetteScartate.eccezioni.filter(x=>x!==id);
+    applicaScarti116();save();closeModal();
+    if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();if(typeof renderSettimana==='function')renderSettimana();
+    renderScartate116();toast('Ricetta spostata nelle ricette scartate');
+  };
+  window.scartaIngrediente116=function(){
+    const el=document.getElementById('v116IngredienteScarto');const t=N(el?.value);if(!t)return toast('Scrivi un ingrediente, per esempio ricotta');
+    if(!confirm('Scartare automaticamente tutte le ricette che contengono “'+t+'”?'))return;
+    if(!st.ricetteScartate.ingredienti.includes(t))st.ricetteScartate.ingredienti.push(t);
+    if(el)el.value='';applicaScarti116();save();renderScartate116();if(typeof renderRicette==='function')renderRicette();if(typeof renderConsigli==='function')renderConsigli();toast('Regola di esclusione aggiunta');
+  };
+  window.ripristinaRicetta116=function(id){
+    st.ricetteScartate.manuali=st.ricetteScartate.manuali.filter(x=>x!==id);
+    if(!st.ricetteScartate.eccezioni.includes(id))st.ricetteScartate.eccezioni.push(id);
+    applicaScarti116();save();renderScartate116();if(typeof renderRicette==='function')renderRicette();toast('Ricetta ripristinata');
+  };
+  
