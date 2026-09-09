@@ -80,7 +80,7 @@ jobs:
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v117-20260909-discard-ui';
+          const C='dalla-simo-v117-20260909-ingredient-results-discard';
           const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-discard-ui.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
@@ -99,7 +99,8 @@ jobs:
           grep -q 'domain-core-v117.js?v=117' domain-core.js
           grep -q 'domain-core-v117-discard-ui.js?v=117' domain-core.js
           grep -q 'data-v117-discard-id' domain-core-v117-discard-ui.js
-          grep -q 'Scarto multiplo disattivato' domain-core-v117-discard-ui.js
+          grep -q 'Scarta tutti i ' domain-core-v117-discard-ui.js
+          grep -q 'scartaTuttiRisultatiIngredienti117' domain-core-v117-discard-ui.js
           grep -q 'ALT_BASE' domain-core-v117.js
           grep -q "'Lunedì':{Spuntino:1,Merenda:1}" domain-core-v117.js
           grep -q "'Mercoledì':{Spuntino:1,Merenda:4}" domain-core-v117.js

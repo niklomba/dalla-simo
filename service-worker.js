@@ -1,4 +1,4 @@
-const C='dalla-simo-v117-20260909-discard-ui';
+const C='dalla-simo-v117-20260909-ingredient-results-discard';
 const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-discard-ui.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
