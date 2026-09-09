@@ -1,0 +1,47 @@
+prodotto · '+label,'<div class="note">Inquadra il QR code o, più spesso, il <b>codice a barre EAN</b> della confezione. Se il prodotto non viene riconosciuto puoi inserire il codice manualmente.</div><div id="reader116"></div><div class="row" style="margin-top:10px"><input id="codiceManuale116" class="search" inputmode="numeric" placeholder="Codice EAN/QR"><button class="btn" onclick="usaCodiceManuale116(\''+mode+'\')">Usa codice</button></div><div id="scannerMsg116" class="meta">Avvio fotocamera…</div>');
+    caricaScannerLib116().then(async()=>{try{scanner116=new Html5Qrcode('reader116');await scanner116.start({facingMode:'environment'},{fps:10,qrbox:250},code=>{fermaScanner116();gestisciCodice116(code,mode)},()=>{});const m=document.getElementById('scannerMsg116');if(m)m.textContent='Fotocamera attiva: inquadra il codice.'}catch(e){const m=document.getElementById('scannerMsg116');if(m)m.textContent='Fotocamera non disponibile. Usa il campo manuale qui sopra.'}}).catch(()=>{const m=document.getElementById('scannerMsg116');if(m)m.textContent='Scanner non disponibile offline. Inserisci il codice manualmente.'});
+  };
+  window.usaCodiceManuale116=function(mode){const c=document.getElementById('codiceManuale116')?.value.trim();if(!c)return toast('Inserisci un codice');fermaScanner116();gestisciCodice116(c,mode)};
+  async function nomeDaCodice116(code){
+    if(st.codiciProdotto[code])return st.codiciProdotto[code];
+    try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,product_name_it,generic_name_it,brands',{cache:'no-store'});if(r.ok){const j=await r.json();const p=j.product||{};const n=(p.product_name_it||p.product_name||p.generic_name_it||'').trim();if(n){st.codiciProdotto[code]=n;save();return n}}}catch(e){}
+    const n=prompt('Prodotto non riconosciuto. Scrivi il nome da associare a questo codice (es. Mozzarella):','');if(n&&n.trim()){st.codiciProdotto[code]=n.trim();save();return n.trim()}return null;
+  }
+  function trovaSpesaPerNome116(nome){const n=N(nome);return (st.spesa||[]).find(x=>x.stato==='da_comprare'&&(N(x.nome)===n||N(x.nome).includes(n)||n.includes(N(x.nome))||N(x.nome).split(' ').some(t=>t.length>3&&n.includes(t))))}
+  window.gestisciCodice116=async function(code,mode){
+    const nome=await nomeDaCodice116(code);if(!nome)return;
+    if(mode==='spesa'){
+      const x=trovaSpesaPerNome116(nome);
+      if(x){x.stato='comprato';x.compratoIl=new Date().toISOString();save();closeModal();renderSpesa();toast(x.nome+' segnato come comprato');return}
+      if(confirm('“'+nome+'” non è nella lista Da comprare. Vuoi aggiungerlo direttamente tra i Comprati?')){st.spesa.push({id:'s'+Date.now(),nome,quantita:1,unita:'confezione',stato:'comprato',origini:['Scansione codice '+code],compratoIl:new Date().toISOString()});save();closeModal();renderSpesa();toast('Prodotto aggiunto ai comprati')}
+      return;
+    }
+    let x=(st.dispensa||[]).find(v=>N(v.nome)===N(nome)||N(v.nome).includes(N(nome))||N(nome).includes(N(v.nome)));
+    if(x)x.quantita=Number(x.quantita||0)+1;else st.dispensa.push({id:'d'+Date.now(),nome,quantita:1,unita:'confezione',codice});
+    save();closeModal();if(typeof renderDispensa==='function')renderDispensa();toast(nome+' aggiunto alla dispensa');
+  };
+  function montaScannerButtons116(){
+    const sp=document.querySelector('#spesa .card.hero');if(sp&&!document.getElementById('scanSpesa116')){const b=document.createElement('button');b.id='scanSpesa116';b.className='btn full secondary';b.style.marginTop='10px';b.innerHTML='📷 Scansiona codice prodotto';b.onclick=()=>apriScanner116('spesa');sp.appendChild(b)}
+    const dp=document.querySelector('#dispensa .card.hero');if(dp&&!document.getElementById('scanDispensa116')){const b=document.createElement('button');b.id='scanDispensa116';b.className='btn full secondary';b.style.marginTop='10px';b.innerHTML='📷 Scansiona e aggiungi in dispensa';b.onclick=()=>apriScanner116('dispensa');dp.appendChild(b)}
+  }
+  const renderDispensaPre116=window.renderDispensa;
+  window.renderDispensa=function(){if(typeof renderDispensaPre116==='function')renderDispensaPre116();montaScannerButtons116()};
+
+  // Aggiornamento filtri/contatori dopo gli scarti.
+  const renderRicettePre116=window.renderRicette;
+  window.renderRicette=function(){if(typeof renderRicettePre116==='function')renderRicettePre116();renderScartate116()};
+
+  // Montaggio finale
+  riordinaSpesa116();montaScannerButtons116();montaAlternativeMenu116();
+  if(typeof renderMembri==='function')renderMembri();
+  if(typeof renderRicette==='function')renderRicette();
+  if(typeof renderSpesa==='function')renderSpesa();
+  if(typeof renderDispensa==='function')renderDispensa();
+  if(typeof renderSettimana==='function')renderSettimana();
+  if(typeof renderConsigli==='function')renderConsigli();
+  save();
+  window.__DALLA_SIMO_BUILD__='v1.16';
+  console.log('Dalla Simo v1.16 attiva');
+}
+boot116();
+})();
