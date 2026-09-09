@@ -101,7 +101,7 @@ jobs:
           grep -q 'Compra tutta la dieta' domain-core-v116.js
           grep -q 'Scansiona codice prodotto' domain-core-v116.js
           grep -q 'Html5Qrcode' domain-core-v116.js
-          grep -q 'Alternativa 4' domain-core-v116.js
+          grep -q 'const MERENDE' domain-core-v116.js
           grep -q 'Da comprare' domain-core-v116.js
           grep -q 'DISPENSA' domain-core-v116.js
 
