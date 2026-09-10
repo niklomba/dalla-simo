@@ -1,4 +1,4 @@
-// Dalla Simo v1.17 — risoluzione prodotto da barcode: Open Facts + fallback retail generico
+// Dalla Simo v1.17 — risoluzione prodotto da barcode: Open Facts esteso + fallback retail + scelta destinazione
 (function(){
 'use strict';
 function boot117ProductResolver(){
@@ -7,6 +7,7 @@ function boot117ProductResolver(){
   }
 
   const N=v=>String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  const H=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   st.codiciProdotto=st.codiciProdotto||{};
   st.codiciProdottoMeta=st.codiciProdottoMeta||{};
 
@@ -31,13 +32,16 @@ function boot117ProductResolver(){
     const t=setTimeout(()=>ctl.abort(),timeout);
     try{
       const r=await fetch(url,{cache:'no-store',redirect:'follow',signal:ctl.signal,headers:{'Accept':'application/json'}});
-      if(r.status===404)return {found:false,notFound:true};
+      let j=null;
+      try{j=await r.json()}catch(e){
+        if(r.status===404)return {found:false,notFound:true};
+        throw e;
+      }
+      if(r.status===404||j?.status===0)return {found:false,notFound:true};
       if(!r.ok)throw new Error('HTTP '+r.status);
-      const j=await r.json();
       const p=j?.product||null;
       const nome=nomeProdotto117(p);
-      if(!p||(!nome&&j?.status===0))return {found:false,notFound:true};
-      if(!nome)return {found:false,notFound:true};
+      if(!p||!nome)return {found:false,notFound:true};
       return {
         found:true,
         nome,
@@ -97,7 +101,9 @@ function boot117ProductResolver(){
     const endpoints=[
       {fonte:'Open Facts universale',tipoDefault:'',url:'https://world.openfoodfacts.org/api/v3/product/'+encodeURIComponent(code)+'?product_type=all&lc=it&cc=it&fields='+fields},
       {fonte:'Open Food Facts',tipoDefault:'food',url:'https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?lc=it&cc=it&fields='+fields},
-      {fonte:'Open Products Facts',tipoDefault:'product',url:'https://world.openproductsfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?lc=it&cc=it&fields='+fields}
+      {fonte:'Open Products Facts',tipoDefault:'product',url:'https://world.openproductsfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?lc=it&cc=it&fields='+fields},
+      {fonte:'Open Beauty Facts',tipoDefault:'beauty',url:'https://world.openbeautyfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?lc=it&cc=it&fields='+fields},
+      {fonte:'Open Pet Food Facts',tipoDefault:'pet-food',url:'https://world.openpetfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?lc=it&cc=it&fields='+fields}
     ];
 
     let almenoUnaRisposta=false;
@@ -152,9 +158,10 @@ function boot117ProductResolver(){
     return {nome:'',tipo:'',fonte:'',stato:almenoUnaRisposta?'non_trovato':'errore_rete',errore:ultimoErrore};
   }
 
-  function trovaSpesa117(nome){
-    const n=N(nome);
+  function trovaSpesa117(nome,code){
+    const n=N(nome),c=String(code||'').trim();
     return (st.spesa||[]).find(x=>x.stato==='da_comprare'&&(
+      (c&&String(x.codice||'')===c)||
       N(x.nome)===n||
       N(x.nome).includes(n)||
       n.includes(N(x.nome))||
@@ -162,16 +169,104 @@ function boot117ProductResolver(){
     ));
   }
 
-  function mostraSoloRiconoscimento117(info,code){
-    const righe=['Prodotto riconosciuto: “'+info.nome+'”'];
-    if(info.marca)righe.push('Marca: '+info.marca);
-    if(info.categoria)righe.push('Categoria: '+info.categoria);
-    righe.push('Codice: '+code);
-    if(info.fonte)righe.push('Fonte: '+info.fonte);
-    righe.push('');
-    righe.push('Articolo riconosciuto come non alimentare/generico: non viene aggiunto automaticamente a Dispensa o Spesa.');
-    alert(righe.join('\n'));
+  function trovaDispensa117(nome,code){
+    const n=N(nome),c=String(code||'').trim();
+    return (st.dispensa||[]).find(x=>
+      (c&&String(x.codice||'')===c)||
+      N(x.nome)===n||
+      N(x.nome).includes(n)||
+      n.includes(N(x.nome))
+    );
   }
+
+  function vai117(id){
+    try{if(typeof showScreenById==='function')showScreenById(id)}catch(e){}
+  }
+
+  function origine117(code){return 'Scansione codice '+code}
+
+  function aggiungiSpesa117(nome,code){
+    st.spesa=Array.isArray(st.spesa)?st.spesa:[];
+    let x=trovaSpesa117(nome,code);
+    if(x){
+      x.origini=Array.isArray(x.origini)?x.origini:[];
+      const o=origine117(code);if(!x.origini.includes(o))x.origini.push(o);
+      if(!x.codice)x.codice=code;
+      if((x.unita||'confezione')==='confezione')x.quantita=Number(x.quantita||0)+1;
+      save();closeModal();if(typeof renderSpesa==='function')renderSpesa();vai117('spesa');
+      if(typeof toast==='function')toast(nome+' aggiornato in Da comprare');
+      return;
+    }
+    st.spesa.push({
+      id:'s'+Date.now()+Math.random().toString(16).slice(2,6),
+      nome,quantita:1,unita:'confezione',stato:'da_comprare',
+      origini:[origine117(code)],codice:code
+    });
+    save();closeModal();if(typeof renderSpesa==='function')renderSpesa();vai117('spesa');
+    if(typeof toast==='function')toast(nome+' aggiunto a Da comprare');
+  }
+
+  function segnaComprato117(nome,code){
+    st.spesa=Array.isArray(st.spesa)?st.spesa:[];
+    let x=trovaSpesa117(nome,code);
+    if(x){
+      x.stato='comprato';x.compratoIl=new Date().toISOString();x.codice=x.codice||code;
+      x.origini=Array.isArray(x.origini)?x.origini:[];
+      const o=origine117(code);if(!x.origini.includes(o))x.origini.push(o);
+    }else{
+      st.spesa.push({
+        id:'s'+Date.now()+Math.random().toString(16).slice(2,6),
+        nome,quantita:1,unita:'confezione',stato:'comprato',
+        origini:[origine117(code)],compratoIl:new Date().toISOString(),codice:code
+      });
+    }
+    save();closeModal();if(typeof renderSpesa==='function')renderSpesa();vai117('spesa');
+    if(typeof toast==='function')toast(nome+' presente in Comprati');
+  }
+
+  function aggiungiDispensa117(nome,code){
+    st.dispensa=Array.isArray(st.dispensa)?st.dispensa:[];
+    let x=trovaDispensa117(nome,code);
+    if(x&&(x.unita||'confezione')==='confezione'){
+      x.quantita=Number(x.quantita||0)+1;x.codice=x.codice||code;
+    }else{
+      st.dispensa.push({id:'d'+Date.now()+Math.random().toString(16).slice(2,6),nome,quantita:1,unita:'confezione',codice:code});
+    }
+    save();closeModal();if(typeof renderDispensa==='function')renderDispensa();vai117('dispensa');
+    if(typeof toast==='function')toast(nome+' aggiunto alla Dispensa');
+  }
+
+  function mostraScelte117(info,code,mode){
+    const nome=info.nome;
+    const inSpesa=!!trovaSpesa117(nome,code);
+    window.__DALLA_SIMO_SCAN_PENDING__={nome,code,info,mode};
+    const dettagli=[
+      info.marca?'<div class="meta">Marca: '+H(info.marca)+'</div>':'',
+      info.categoria?'<div class="meta">Categoria: '+H(info.categoria)+'</div>':'',
+      info.fonte?'<div class="meta">Fonte: '+H(info.fonte)+'</div>':'',
+      '<div class="meta">Codice: '+H(code)+'</div>'
+    ].join('');
+    const nota=info.soloRiconoscimento
+      ?'<div class="note" style="margin-top:10px">Prodotto riconosciuto da un database generico/non alimentare. Non viene inserito automaticamente: scegli tu dove aggiungerlo.</div>'
+      :'';
+    const compra=inSpesa
+      ?'<button class="btn full" style="margin-top:8px" onclick="azioneScansioneProdotto117(\'comprato\')">✓ Segna come comprato</button>'
+      :'<button class="btn full secondary" style="margin-top:8px" onclick="azioneScansioneProdotto117(\'comprato\')">✓ Ho già comprato questo prodotto</button>';
+    openModal('Prodotto riconosciuto',
+      '<div class="card"><div class="recipe-title">'+H(nome)+'</div>'+dettagli+nota+'</div>'+ 
+      '<button class="btn full" onclick="azioneScansioneProdotto117(\'spesa\')">🛒 Aggiungi a Da comprare</button>'+ 
+      '<button class="btn full secondary" style="margin-top:8px" onclick="azioneScansioneProdotto117(\'dispensa\')">🏠 Aggiungi alla Dispensa</button>'+ 
+      compra+
+      '<div class="meta" style="margin-top:10px">Nessuna destinazione viene scelta automaticamente.</div>'
+    );
+  }
+
+  window.azioneScansioneProdotto117=function(azione){
+    const p=window.__DALLA_SIMO_SCAN_PENDING__;if(!p)return;
+    if(azione==='spesa')return aggiungiSpesa117(p.nome,p.code);
+    if(azione==='dispensa')return aggiungiDispensa117(p.nome,p.code);
+    if(azione==='comprato')return segnaComprato117(p.nome,p.code);
+  };
 
   window.gestisciCodice116=async function(code,mode){
     code=String(code||'').trim();
@@ -181,17 +276,11 @@ function boot117ProductResolver(){
     const info=await risolviProdotto117(code);
     let nome=info.nome;
 
-    if(info.soloRiconoscimento&&nome){
-      closeModal();
-      mostraSoloRiconoscimento117(info,code);
-      return;
-    }
-
     if(!nome){
       const testo=info.stato==='errore_rete'
         ?'Non riesco a contattare i database prodotti. Controlla la connessione e riprova. Se vuoi, puoi inserire il nome manualmente.'
         :info.stato==='limite_generico'
-          ?'Il database generale ha raggiunto il limite temporaneo di richieste. Il prodotto non è stato trovato nelle fonti alimentari. Puoi riprovare più tardi o inserire il nome manualmente.'
+          ?'Il database generale ha raggiunto il limite temporaneo di richieste. Il prodotto non è stato trovato nelle altre fonti. Puoi riprovare più tardi o inserire il nome manualmente.'
           :'Prodotto non presente nei database disponibili. Scrivi il nome da associare a questo codice:';
       const manuale=prompt(testo,'');
       if(!manuale||!manuale.trim())return;
@@ -199,47 +288,14 @@ function boot117ProductResolver(){
       st.codiciProdotto[code]=nome;
       st.codiciProdottoMeta[code]={tipo:'manuale',fonte:'inserimento manuale',soloRiconoscimento:false,aggiornatoIl:new Date().toISOString()};
       save();
+      info.nome=nome;info.tipo='manuale';info.fonte='inserimento manuale';info.soloRiconoscimento=false;info.stato='manuale';
     }
 
-    if(mode==='spesa'){
-      const x=trovaSpesa117(nome);
-      if(x){
-        x.stato='comprato';
-        x.compratoIl=new Date().toISOString();
-        x.codice=code;
-        save();
-        closeModal();
-        if(typeof renderSpesa==='function')renderSpesa();
-        if(typeof toast==='function')toast(x.nome+' riconosciuto e segnato come comprato');
-        return;
-      }
-      if(confirm('Prodotto riconosciuto: “'+nome+'”. Non è nella lista Da comprare. Vuoi aggiungerlo direttamente tra i Comprati?')){
-        st.spesa.push({
-          id:'s'+Date.now(),nome,quantita:1,unita:'confezione',stato:'comprato',
-          origini:['Scansione codice '+code],compratoIl:new Date().toISOString(),codice
-        });
-        save();
-        closeModal();
-        if(typeof renderSpesa==='function')renderSpesa();
-        if(typeof toast==='function')toast(nome+' aggiunto ai comprati');
-      }
-      return;
-    }
-
-    let x=(st.dispensa||[]).find(v=>N(v.nome)===N(nome)||N(v.nome).includes(N(nome))||N(nome).includes(N(v.nome)));
-    if(x){
-      x.quantita=Number(x.quantita||0)+1;
-      if(!x.codice)x.codice=code;
-    }else{
-      st.dispensa.push({id:'d'+Date.now(),nome,quantita:1,unita:'confezione',codice});
-    }
-    save();
-    closeModal();
-    if(typeof renderDispensa==='function')renderDispensa();
-    if(typeof toast==='function')toast(nome+' riconosciuto e aggiunto alla dispensa');
+    try{if(typeof closeModal==='function')closeModal()}catch(e){}
+    mostraScelte117({...info,nome},code,mode);
   };
 
-  window.__DALLA_SIMO_PRODUCT_LOOKUP__='v117-open-facts-plus-upcitemdb';
+  window.__DALLA_SIMO_PRODUCT_LOOKUP__='v117-open-facts-expanded-plus-upcitemdb-destination-choice';
 }
 boot117ProductResolver();
 })();
