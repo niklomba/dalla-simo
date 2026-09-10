@@ -28,6 +28,7 @@ jobs:
           test -s domain-core-v117.part3
           test -s domain-core-v117-search-scanner.js
           test -s domain-core-v117-product-resolver.js
+          test -s domain-core-v117-qr-resolver.js
           test -s domain-core-v117-discard-ui.js
           test -s brand-v111-512.png
           test -s icon-192-v112.png
@@ -40,6 +41,7 @@ jobs:
           node --check domain-core-v117.js
           node --check domain-core-v117-search-scanner.js
           node --check domain-core-v117-product-resolver.js
+          node --check domain-core-v117-qr-resolver.js
           node --check domain-core-v117-discard-ui.js
 
           cat > domain-core.js <<'JS'
@@ -61,6 +63,7 @@ jobs:
               .then(()=>carica('./domain-core-v117.js?v=117'))
               .then(()=>carica('./domain-core-v117-search-scanner.js?v=117'))
               .then(()=>carica('./domain-core-v117-product-resolver.js?v=117'))
+              .then(()=>carica('./domain-core-v117-qr-resolver.js?v=117'))
               .then(()=>carica('./domain-core-v117-discard-ui.js?v=117'))
               .then(()=>{
                 document.title='App Alimentazione — Dalla Simo v1.17';
@@ -86,8 +89,8 @@ jobs:
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v117-20260910-generic-barcode-fallback';
-          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-search-scanner.js?v=117','./domain-core-v117-product-resolver.js?v=117','./domain-core-v117-discard-ui.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
+          const C='dalla-simo-v117-20260910-qr-resolver';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-search-scanner.js?v=117','./domain-core-v117-product-resolver.js?v=117','./domain-core-v117-qr-resolver.js?v=117','./domain-core-v117-discard-ui.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
           self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}))) });
@@ -101,12 +104,14 @@ jobs:
           node --check domain-core-v117.js
           node --check domain-core-v117-search-scanner.js
           node --check domain-core-v117-product-resolver.js
+          node --check domain-core-v117-qr-resolver.js
           node --check domain-core-v117-discard-ui.js
           grep -q 'Dalla Simo v1.17' index.html
           grep -q 'domain-core.js?v=117' index.html
           grep -q 'domain-core-v117.js?v=117' domain-core.js
           grep -q 'domain-core-v117-search-scanner.js?v=117' domain-core.js
           grep -q 'domain-core-v117-product-resolver.js?v=117' domain-core.js
+          grep -q 'domain-core-v117-qr-resolver.js?v=117' domain-core.js
           grep -q 'domain-core-v117-discard-ui.js?v=117' domain-core.js
           grep -q "carne:\['carne'" domain-core-v117-search-scanner.js
           grep -q 'cdn.jsdelivr.net/npm/html5-qrcode@2.3.8' domain-core-v117-search-scanner.js
@@ -117,6 +122,10 @@ jobs:
           grep -q 'soloRiconoscimento' domain-core-v117-product-resolver.js
           grep -q 'generic-retail' domain-core-v117-product-resolver.js
           grep -q '__DALLA_SIMO_PRODUCT_LOOKUP__' domain-core-v117-product-resolver.js
+          grep -q '__DALLA_SIMO_QR_ROUTER__' domain-core-v117-qr-resolver.js
+          grep -q 'estraiGtin117' domain-core-v117-qr-resolver.js
+          grep -q 'QR rete Wi' domain-core-v117-qr-resolver.js
+          grep -q 'QR pagamento' domain-core-v117-qr-resolver.js
           grep -q 'data-v117-discard-id' domain-core-v117-discard-ui.js
           grep -q 'Scarta tutti i ' domain-core-v117-discard-ui.js
           grep -q 'scartaTuttiRisultatiIngredienti117' domain-core-v117-discard-ui.js
@@ -136,7 +145,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html domain-core.js domain-core-v117.js domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js domain-core-v117-discard-ui.js service-worker.js
+          git add index.html domain-core.js domain-core-v117.js domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js domain-core-v117-qr-resolver.js domain-core-v117-discard-ui.js service-worker.js
           if git diff --cached --quiet; then
             echo "v1.17 già aggiornata"
             exit 0
