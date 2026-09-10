@@ -92,7 +92,7 @@ jobs:
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v117-20260910-spesa-dispensa-mass-actions';
+          const C='dalla-simo-v117-20260910-spesa-dispensa-ripristina';
           const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=117','./domain-core-v113.js?v=117','./domain-core-v114.js?v=117','./domain-core-v116.js?v=117','./domain-core-v117.js?v=117','./domain-core-v117-search-scanner.js?v=117','./domain-core-v117-product-resolver.js?v=117','./domain-core-v117-qr-resolver.js?v=117','./domain-core-v117-discard-ui.js?v=117','./domain-core-v117-spesa-actions.js?v=117','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
@@ -141,6 +141,8 @@ jobs:
           grep -q 'scartaTuttiRisultatiIngredienti117' domain-core-v117-discard-ui.js
           grep -q 'segnaTuttoComprato117' domain-core-v117-spesa-actions.js
           grep -q 'Sposta tutto in Comprati' domain-core-v117-spesa-actions.js
+          grep -q 'ripristinaComprato117' domain-core-v117-spesa-actions.js
+          grep -q 'data-v117-ripristina' domain-core-v117-spesa-actions.js
           grep -q 'svuotaDispensa117' domain-core-v117-spesa-actions.js
           grep -q 'Svuota tutta la Dispensa' domain-core-v117-spesa-actions.js
           grep -q '__DALLA_SIMO_SPESA_ACTIONS__' domain-core-v117-spesa-actions.js
