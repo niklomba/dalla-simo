@@ -1,8 +1,8 @@
-// Dalla Simo v1.17 — azioni rapide Lista Spesa
+// Dalla Simo v1.17 — azioni rapide Lista Spesa + Dispensa
 (function(){
 'use strict';
 function boot117SpesaActions(){
-  if(typeof st==='undefined'||typeof save!=='function'||typeof window.renderSpesa!=='function'){
+  if(typeof st==='undefined'||typeof save!=='function'||typeof window.renderSpesa!=='function'||typeof window.renderDispensa!=='function'){
     return setTimeout(boot117SpesaActions,120);
   }
 
@@ -19,22 +19,46 @@ function boot117SpesaActions(){
     if(!bar){
       bar=document.createElement('div');
       bar.id='v117CompratoTuttoBar';
-      bar.className='row between';
-      bar.style.cssText='gap:10px;align-items:center;margin:8px 0 12px;flex-wrap:wrap';
+      bar.style.cssText='display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px';
       lista.parentNode.insertBefore(bar,lista);
     }
-    bar.innerHTML='<div class="meta"><b>'+arr.length+'</b> da comprare</div><button type="button" class="btn" onclick="segnaTuttoComprato117()">✓ Comprato tutto</button>';
+    bar.innerHTML='<button type="button" class="btn full" onclick="segnaTuttoComprato117()">✓ Sposta tutto in Comprati ('+arr.length+')</button><div class="meta">Segna tutta la spesa ancora da fare come già comprata.</div>';
   }
 
   window.segnaTuttoComprato117=function(){
     const arr=daComprare117();
     if(!arr.length){if(typeof toast==='function')toast('Non ci sono prodotti da segnare come comprati');return}
-    if(!confirm('Segnare come comprati tutti i '+arr.length+' prodotti presenti in Da comprare?'))return;
+    if(!confirm('Spostare tutti i '+arr.length+' prodotti da “Da comprare” a “Comprati”?'))return;
     const quando=new Date().toISOString();
     arr.forEach(x=>{x.stato='comprato';x.compratoIl=quando});
     save();
     if(typeof window.renderSpesa==='function')window.renderSpesa();
     if(typeof toast==='function')toast(arr.length+' prodotti spostati in Comprati');
+  };
+
+  function montaSvuotaDispensa117(){
+    const lista=document.getElementById('listaDispensa');
+    if(!lista)return;
+    const n=Array.isArray(st.dispensa)?st.dispensa.length:0;
+    let bar=document.getElementById('v117SvuotaDispensaBar');
+    if(!n){if(bar)bar.remove();return}
+    if(!bar){
+      bar=document.createElement('div');
+      bar.id='v117SvuotaDispensaBar';
+      bar.style.cssText='margin:10px 0 12px';
+      lista.parentNode.insertBefore(bar,lista);
+    }
+    bar.innerHTML='<button type="button" class="btn full danger" onclick="svuotaDispensa117()">🗑 Svuota tutta la Dispensa ('+n+')</button><div class="meta">Cancella tutti gli alimenti registrati in Dispensa. Gli Avanzi restano separati e non vengono cancellati.</div>';
+  }
+
+  window.svuotaDispensa117=function(){
+    const n=Array.isArray(st.dispensa)?st.dispensa.length:0;
+    if(!n){if(typeof toast==='function')toast('La Dispensa è già vuota');return}
+    if(!confirm('Cancellare tutti i '+n+' alimenti presenti in Dispensa? Gli Avanzi non verranno cancellati.'))return;
+    st.dispensa=[];
+    save();
+    if(typeof window.renderDispensa==='function')window.renderDispensa();
+    if(typeof toast==='function')toast('Dispensa svuotata');
   };
 
   const renderSpesaPre117=window.renderSpesa;
@@ -43,8 +67,15 @@ function boot117SpesaActions(){
     montaCompratoTutto117();
   };
 
+  const renderDispensaPre117=window.renderDispensa;
+  window.renderDispensa=function(){
+    renderDispensaPre117();
+    montaSvuotaDispensa117();
+  };
+
   montaCompratoTutto117();
-  window.__DALLA_SIMO_SPESA_ACTIONS__='v117-comprato-tutto';
+  montaSvuotaDispensa117();
+  window.__DALLA_SIMO_SPESA_ACTIONS__='v117-spesa-dispensa-mass-actions';
 }
 boot117SpesaActions();
 })();
