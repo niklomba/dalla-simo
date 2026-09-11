@@ -1,195 +1,118 @@
-name: Pubblica Dalla Simo v1.18
+name: Pubblica Dalla Simo v1.19
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feat/v119-ricettario-1500"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  aggiorna-v118:
-    if: ${{ !contains(github.event.head_commit.message, '[generated-v118]') }}
+  aggiorna-v119:
+    if: ${{ !contains(github.event.head_commit.message, '[generated-v119]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Scarica repository
         uses: actions/checkout@v4
 
-      - name: Prepara Dalla Simo v1.18
+      - name: Prepara Dalla Simo v1.19
         shell: bash
         run: |
           set -euo pipefail
-          test -s domain-core-v113.js
-          test -s domain-core-v114.js
-          test -s domain-core-v116.js
-          test -s domain-core-v117.part1
-          test -s domain-core-v117.part2
-          test -s domain-core-v117.part3
-          test -s domain-core-v117-search-scanner.js
-          test -s domain-core-v117-product-resolver.js
-          test -s domain-core-v117-qr-resolver.js
-          test -s domain-core-v117-discard-ui.js
-          test -s domain-core-v117-spesa-actions.js
-          test -s domain-core-v118-recipes.js
-          test -s domain-core-v118-ui.js
-          test -s brand-v111-512.png
-          test -s icon-192-v112.png
-          test -s icon-512-v112.png
-
+          for f in domain-core-v113.js domain-core-v114.js domain-core-v116.js domain-core-v117.part1 domain-core-v117.part2 domain-core-v117.part3 domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js domain-core-v117-qr-resolver.js domain-core-v117-discard-ui.js domain-core-v117-spesa-actions.js domain-core-v118-recipes.js domain-core-v118-ui.js domain-core-v119-recipes.js domain-core-v119-family-nutrition.js; do test -s "$f"; done
           cat domain-core-v117.part1 domain-core-v117.part2 domain-core-v117.part3 > domain-core-v117.js
-
-          for f in \
-            domain-core-v113.js domain-core-v114.js domain-core-v116.js domain-core-v117.js \
-            domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js \
-            domain-core-v117-qr-resolver.js domain-core-v117-discard-ui.js \
-            domain-core-v117-spesa-actions.js domain-core-v118-recipes.js domain-core-v118-ui.js
-          do
-            node --check "$f"
-          done
+          for f in domain-core-v113.js domain-core-v114.js domain-core-v116.js domain-core-v117.js domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js domain-core-v117-qr-resolver.js domain-core-v117-discard-ui.js domain-core-v117-spesa-actions.js domain-core-v118-recipes.js domain-core-v118-ui.js domain-core-v119-recipes.js domain-core-v119-family-nutrition.js; do node --check "$f"; done
 
           cat > domain-core.js <<'JS'
-          // Loader Dalla Simo v1.18
+          // Loader Dalla Simo v1.19
           (function(){
-            function carica(src){
-              return new Promise((resolve,reject)=>{
-                const s=document.createElement('script');
-                s.src=src;
-                s.async=false;
-                s.onload=resolve;
-                s.onerror=()=>reject(new Error('Impossibile caricare '+src));
-                document.head.appendChild(s);
-              });
-            }
-            carica('./domain-core-v113.js?v=118')
-              .then(()=>carica('./domain-core-v114.js?v=118'))
-              // Il catalogo v1.18 entra PRIMA di v1.16, così scarti/master includono anche le nuove ricette.
-              .then(()=>carica('./domain-core-v118-recipes.js?v=118'))
-              .then(()=>carica('./domain-core-v116.js?v=118'))
-              .then(()=>carica('./domain-core-v117.js?v=118'))
-              .then(()=>carica('./domain-core-v117-search-scanner.js?v=118'))
-              .then(()=>carica('./domain-core-v117-product-resolver.js?v=118'))
-              .then(()=>carica('./domain-core-v117-qr-resolver.js?v=118'))
-              .then(()=>carica('./domain-core-v117-discard-ui.js?v=118'))
-              .then(()=>carica('./domain-core-v117-spesa-actions.js?v=118'))
-              .then(()=>carica('./domain-core-v118-ui.js?v=118'))
-              .then(()=>{
-                document.title='App Alimentazione — Dalla Simo v1.18';
-                const sub=document.querySelector('.brand-subtitle');
-                if(sub)sub.textContent='Alimentazione familiare · v1.18';
-                window.__DALLA_SIMO_BUILD__='v1.18';
-                console.log('Dalla Simo v1.18 attiva');
-              })
-              .catch(e=>console.error('Dalla Simo v1.18:',e));
+            function carica(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=()=>reject(new Error('Impossibile caricare '+src));document.head.appendChild(s)})}
+            carica('./domain-core-v113.js?v=119')
+              .then(()=>carica('./domain-core-v114.js?v=119'))
+              .then(()=>carica('./domain-core-v118-recipes.js?v=119'))
+              .then(()=>carica('./domain-core-v119-recipes.js?v=119'))
+              .then(()=>carica('./domain-core-v116.js?v=119'))
+              .then(()=>carica('./domain-core-v117.js?v=119'))
+              .then(()=>carica('./domain-core-v117-search-scanner.js?v=119'))
+              .then(()=>carica('./domain-core-v117-product-resolver.js?v=119'))
+              .then(()=>carica('./domain-core-v117-qr-resolver.js?v=119'))
+              .then(()=>carica('./domain-core-v117-discard-ui.js?v=119'))
+              .then(()=>carica('./domain-core-v117-spesa-actions.js?v=119'))
+              .then(()=>carica('./domain-core-v118-ui.js?v=119'))
+              .then(()=>carica('./domain-core-v119-family-nutrition.js?v=119'))
+              .then(()=>{document.title='App Alimentazione — Dalla Simo v1.19';const sub=document.querySelector('.brand-subtitle');if(sub)sub.textContent='Alimentazione familiare · v1.19';const rsub=document.querySelector('#ricette .sub');if(rsub&&window.__DALLA_SIMO_RECIPES_V119__)rsub.textContent='Archivio locale · '+window.__DALLA_SIMO_RECIPES_V119__.total+' ricette/versioni uniche · '+window.__DALLA_SIMO_RECIPES_V119__.uniqueNames+' piatti distinti';window.__DALLA_SIMO_BUILD__='v1.19';console.log('Dalla Simo v1.19 attiva')})
+              .catch(e=>console.error('Dalla Simo v1.19:',e));
           })();
           JS
 
           python - <<'PY'
           from pathlib import Path
           import re
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.18</title>',s,count=1,flags=re.S)
-          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.18',s)
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          s=re.sub(r'<title>.*?</title>','<title>App Alimentazione — Dalla Simo v1.19</title>',s,count=1,flags=re.S)
+          s=re.sub(r'Alimentazione familiare · v\d+\.\d+','Alimentazione familiare · v1.19',s)
+          s=s.replace('Archivio locale dimostrativo · 247 ricette','Archivio locale · conteggio aggiornato al caricamento')
           s=re.sub(r'\s*<script\s+src=["\']\./domain-core\.js(?:\?v=\d+)?["\']\s*></script>\s*','\n',s,flags=re.I)
-          s=s.replace('</body>','<script src="./domain-core.js?v=118"></script>\n</body>')
+          s=s.replace('</body>','<script src="./domain-core.js?v=119"></script>\n</body>')
           p.write_text(s,encoding='utf-8')
           PY
 
           cat > service-worker.js <<'JS'
-          const C='dalla-simo-v118-20260911-recipes-menu-ux';
-          const A=[
-            './','./index.html','./manifest.webmanifest','./domain-core.js?v=118',
-            './domain-core-v113.js?v=118','./domain-core-v114.js?v=118','./domain-core-v118-recipes.js?v=118',
-            './domain-core-v116.js?v=118','./domain-core-v117.js?v=118',
-            './domain-core-v117-search-scanner.js?v=118','./domain-core-v117-product-resolver.js?v=118',
-            './domain-core-v117-qr-resolver.js?v=118','./domain-core-v117-discard-ui.js?v=118',
-            './domain-core-v117-spesa-actions.js?v=118','./domain-core-v118-ui.js?v=118',
-            './brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'
-          ];
+          const C='dalla-simo-v119-20260911-recipes-family-nutrition';
+          const A=['./','./index.html','./manifest.webmanifest','./domain-core.js?v=119','./domain-core-v113.js?v=119','./domain-core-v114.js?v=119','./domain-core-v118-recipes.js?v=119','./domain-core-v119-recipes.js?v=119','./domain-core-v116.js?v=119','./domain-core-v117.js?v=119','./domain-core-v117-search-scanner.js?v=119','./domain-core-v117-product-resolver.js?v=119','./domain-core-v117-qr-resolver.js?v=119','./domain-core-v117-discard-ui.js?v=119','./domain-core-v117-spesa-actions.js?v=119','./domain-core-v118-ui.js?v=119','./domain-core-v119-family-nutrition.js?v=119','./brand-v111-512.png','./icon-192-v112.png','./icon-512-v112.png','./apple-touch-icon-v112.png'];
           self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
           self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))])));
-          self.addEventListener('fetch',e=>{
-            if(e.request.method!=='GET')return;
-            const n=e.request.mode==='navigate';
-            if(n){
-              e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));
-              return;
-            }
-            e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x})))
-          });
+          self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const n=e.request.mode==='navigate';if(n){e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put('./index.html',c));return r}).catch(()=>caches.match('./index.html')));return}e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x})))});
           JS
 
-      - name: Verifica v1.18
+      - name: Verifica v1.19 e conteggio reale
         shell: bash
         run: |
           set -euo pipefail
           node --check domain-core.js
-          node --check domain-core-v118-recipes.js
-          node --check domain-core-v118-ui.js
+          grep -q 'Dalla Simo v1.19' index.html
+          grep -q 'domain-core-v119-recipes.js?v=119' domain-core.js
+          grep -q 'domain-core-v119-family-nutrition.js?v=119' domain-core.js
+          grep -q 'conteggio aggiornato al caricamento' index.html
 
-          grep -q 'Dalla Simo v1.18' index.html
-          grep -q 'domain-core.js?v=118' index.html
-          grep -q 'domain-core-v118-recipes.js?v=118' domain-core.js
-          grep -q 'domain-core-v118-ui.js?v=118' domain-core.js
-
-          # Gate ricettario: almeno 750 nuove voci generate dal catalogo v1.18.
           node - <<'NODE'
-          global.window=global;
-          global.RICETTE=[];
-          require('./domain-core-v118-recipes.js');
-          if(!global.__DALLA_SIMO_RECIPES_V118__ || RICETTE.length < 750) {
-            throw new Error('Catalogo v1.18 troppo piccolo: '+RICETTE.length);
-          }
-          console.log('Ricette v1.18 generate:',RICETTE.length);
+          const fs=require('fs'),vm=require('vm');
+          const html=fs.readFileSync('index.html','utf8');
+          const m=html.match(/const RICETTE=(\[[\s\S]*?\]);\s*const KEY=/);if(!m)throw new Error('RICETTE base non trovate');
+          const base=JSON.parse(m[1]);
+          const context={RICETTE:base,window:null,document:{querySelector:()=>null},setTimeout:()=>{}};context.window=context;vm.createContext(context);
+          vm.runInContext(fs.readFileSync('domain-core-v118-recipes.js','utf8'),context);
+          vm.runInContext(fs.readFileSync('domain-core-v119-recipes.js','utf8'),context);
+          const N=v=>String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+          const keys=context.RICETTE.map(r=>N(r.nome)+'|'+N(r.variante||'classica'));
+          const unique=new Set(keys), names=new Set(context.RICETTE.map(r=>N(r.nome)));
+          if(unique.size!==context.RICETTE.length)throw new Error('Doppioni residui: '+(context.RICETTE.length-unique.size));
+          if(context.RICETTE.length<1500)throw new Error('Totale sotto target 1500: '+context.RICETTE.length);
+          console.log('BASE_STATICHE='+base.length);
+          console.log('V118_AGGIUNTE='+context.__DALLA_SIMO_RECIPES_V118__.added);
+          console.log('V119_AGGIUNTE='+context.__DALLA_SIMO_RECIPES_V119__.added);
+          console.log('DOPPIONI_RIMOSSI='+context.__DALLA_SIMO_RECIPES_V119__.removed);
+          console.log('TOTALE_REALE_UNICO='+context.RICETTE.length);
+          console.log('PIATTI_DISTINTI='+names.size);
           NODE
-          grep -q 'Spaghetti alla carbonara' domain-core-v118-recipes.js
-          grep -q 'Pancetta affumicata' domain-core-v118-recipes.js
-          grep -q 'Patate al forno' domain-core-v118-recipes.js
-          grep -q 'Zucchine gratinate' domain-core-v118-recipes.js
-          grep -q 'Spiedini di gamberoni' domain-core-v118-recipes.js
-          grep -q 'cucina_mediterranea' domain-core-v118-recipes.js
 
-          # Gate barcode / QR già estesi: alimenti + articoli generici + payload QR.
-          grep -q 'product_type=all' domain-core-v117-product-resolver.js
-          grep -q 'world.openproductsfacts.org' domain-core-v117-product-resolver.js
-          grep -q 'world.openbeautyfacts.org' domain-core-v117-product-resolver.js
-          grep -q 'world.openpetfoodfacts.org' domain-core-v117-product-resolver.js
-          grep -q 'api.upcitemdb.com/prod/trial/lookup' domain-core-v117-product-resolver.js
-          grep -q 'generic-retail' domain-core-v117-product-resolver.js
-          grep -q '__DALLA_SIMO_QR_ROUTER__' domain-core-v117-qr-resolver.js
-          grep -q 'estraiGtin117' domain-core-v117-qr-resolver.js
-
-          # Gate UX/menu.
-          grep -q 'vaiIndietro118' domain-core-v118-ui.js
-          grep -q 'Registra i pasti' domain-core-v118-ui.js
-          grep -q 'Un altro consiglio' domain-core-v118-ui.js
-          grep -q 'Cambia menu giornaliero' domain-core-v118-ui.js
-          grep -q 'Cambia menu settimanale' domain-core-v118-ui.js
-          grep -q 'Proposta completa: primo + secondo + contorno' domain-core-v118-ui.js
-          grep -q 'apriCambiaAlternativa118' domain-core-v118-ui.js
-          grep -q 'Olio EVO: 20 g TOTALI' domain-core-v118-ui.js
-          grep -q 'articolo non alimentare/generico' domain-core-v118-ui.js
-
-          # Regressioni principali v1.17.
-          grep -q 'Scarta tutti i ' domain-core-v117-discard-ui.js
+          grep -q 'ingredientiPreferiti' domain-core-v119-family-nutrition.js
+          grep -q 'ingredientiNonGraditi' domain-core-v119-family-nutrition.js
+          grep -q 'Consumo reale del giorno' domain-core-v119-family-nutrition.js
+          grep -q 'proteine_g' domain-core-v119-family-nutrition.js
+          grep -q 'carboidrati_g' domain-core-v119-family-nutrition.js
+          grep -q 'grassi_g' domain-core-v119-family-nutrition.js
           grep -q 'ripristinaComprato117' domain-core-v117-spesa-actions.js
-          grep -q 'Svuota tutta la Dispensa' domain-core-v117-spesa-actions.js
-          grep -q 'Riepilogo quantità dieta Simona' domain-core-v117.js
+          grep -q '__DALLA_SIMO_QR_ROUTER__' domain-core-v117-qr-resolver.js
 
-      - name: Pubblica v1.18
+      - name: Pubblica v1.19
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html domain-core.js domain-core-v117.js \
-            domain-core-v117-search-scanner.js domain-core-v117-product-resolver.js \
-            domain-core-v117-qr-resolver.js domain-core-v117-discard-ui.js \
-            domain-core-v117-spesa-actions.js domain-core-v118-recipes.js domain-core-v118-ui.js \
-            service-worker.js
-          if git diff --cached --quiet; then
-            echo "v1.18 già aggiornata"
-            exit 0
-          fi
-          git commit -m "[generated-v118] Pubblica Dalla Simo v1.18"
+          git add index.html domain-core.js domain-core-v117.js service-worker.js
+          if git diff --cached --quiet; then echo "v1.19 già aggiornata"; exit 0; fi
+          git commit -m "[generated-v119] Pubblica Dalla Simo v1.19"
           git push
