@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "nota": "Manifest degli originali forniti dall'utente. Le immagini non sono pubblicate nel repository pubblico; l'app le conserva localmente in IndexedDB e verifica gli SHA-256.",
+  "simona": {
+    "zip": "DIETA_SIMONA_IMMAGINI.zip",
+    "zip_sha256": "430918cf6109bab6a64eaeb06cb8b486edd61f00b1646a417c26c391287e4bb4",
+    "immagini": [
+      {"file":"Simona_01.jpg","bytes":124657,"sha256":"bc6ffc229aff6943be16506da2b8e3299b415eec8567839c78076ef140ecafda"},
+      {"file":"Simona_02.jpg","bytes":123077,"sha256":"7a00b29a0b3a0863ee9efa589f7e4a3043ea032838b29b0d518c1b7fb750b750"},
+      {"file":"Simona_03.jpg","bytes":145775,"sha256":"263b786168dc2ef0fd14da97395ef6a93ffe05a0b49dac00ba8db48f29f1aa10"},
+      {"file":"Simona_04.jpg","bytes":134064,"sha256":"2e0e54626dfbd8bc54942e78b9e9ead5ea82c8e114b46d8e25e3f82d4436d8ab"},
+      {"file":"Simona_05.jpg","bytes":105568,"sha256":"72702c9c9ca81449f567afae8537f637b4e1aa753a471fdf2c03940b36bdb89b"},
+      {"file":"Simona_06.jpg","bytes":150870,"sha256":"d446af0840d3c877d102ce7c448ffe6ede5cb50b5f82cb63fe8f065e1f234a03"}
+    ]
+  },
+  "nicola": {
+    "zip": "DIETA_NICOLA_IMMAGINI.zip",
+    "zip_sha256": "1a37a1861cbb699d9b0a0e869f8c96636ee32962fd5f79d3d7e183c4b240149d",
+    "immagini": [
+      {"file":"Nicola_01.jpg","bytes":216921,"sha256":"bd3e7517a2761d9c9d6119c909e488bfafe8b575ea5228c96c261f2291ffc988"},
+      {"file":"Nicola_02.jpg","bytes":244625,"sha256":"f480f2ab7d3a21c4e89907a0cd314d058339a5d7a62d6a4b609847eaee54fe06"},
+      {"file":"Nicola_03.jpg","bytes":230179,"sha256":"a874b6ef4f2790b2edaa9c1fc97da27dc23bb0a9d27610fc363df01e9673651d"},
+      {"file":"Nicola_04.jpg","bytes":222540,"sha256":"97e6a68c2ac0128edd490a304869e6cdafe45a45340a3d9c692ba201ca64c80c"},
+      {"file":"Nicola_05.jpg","bytes":258212,"sha256":"3070434e7de8841885b372117dfc5c91c0b942b6ce015ac0faf85509be490c4c"}
+    ]
+  }
+}
