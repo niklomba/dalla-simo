@@ -125,7 +125,7 @@ function boot122(){
   function importInput(){return '<input id="v122PrivateFile" type="file" accept="application/json,.json" hidden onchange="v122ImportFiles(this)">';}
   function altreActions(){return '<div class="v122-top-actions"><button class="btn secondary" onclick="showScreenById(\'famiglia\')">👨‍👩‍👧‍👦 Altre diete in Famiglia</button><button class="btn secondary" onclick="apriFotoOriginali122()">🖼️ Foto originali</button></div>';}
   function content(){
-    if(!localDiet)return `<div class="card v122-hero"><h3>Dieta originale di Simona</h3><p class="v122-local">${loadState==='loading'?'Caricamento della dieta salvata…':loadState==='error'?H(loadError):'Importa una volta il file privato della dieta: ritroverai qui i pasti, le grammature e tutte le note originali.'}</p><button class="btn full" ${loadState==='loading'?'disabled':''} onclick="v122ImportClick()">📥 Importa dieta privata</button><p class="v122-local">Il piano resta su questo dispositivo. Puoi consultarlo anche offline; su un altro telefono occorre importare di nuovo il file.</p>${importInput()}${altreActions()}</div>`;
+    if(!localDiet)return `<div class="card v122-hero"><h3>Dieta originale di Simona</h3><p class="v122-local">${loadState==='loading'?'Preparazione della dieta sul dispositivo…':loadState==='error'?H(loadError):'Apri il collegamento personale che hai ricevuto: la dieta comparirà automaticamente e resterà salvata su questo dispositivo.'}</p><p class="v122-local">Potrai consultarla anche offline. Sul tuo altro telefono puoi usare lo stesso collegamento personale.</p>${altreActions()}<details class="v122-manage" style="margin-top:14px"><summary>Hai già una copia privata del piano?</summary><button class="btn full" style="margin-top:10px" ${loadState==='loading'?'disabled':''} onclick="v122ImportClick()">📥 Importa dieta privata</button>${importInput()}</details></div>`;
     const di=Math.max(0,GIORNI.indexOf(st.giornoPlanner));
     return `<div class="card v122-hero"><div class="row between"><div><h3>${H(localDiet.title)}</h3><div class="v114-plan-badge">${localDiet.sourcePages?`TRASCRIZIONE DELLE ${localDiet.sourcePages} PAGINE ORIGINALI`:'PIANO ORIGINALE'}</div></div><span class="pill">SOLO QUI</span></div><p class="v122-local">${H(localDiet.description)}</p>${altreActions()}</div>
       <div class="v122-day-nav">${GIORNI.map((g,i)=>`<button class="btn small ${i===di?'':'secondary'}" aria-pressed="${i===di}" onclick="v122ScegliGiorno(${i})">${H(g)}</button>`).join('')}</div>
@@ -147,14 +147,17 @@ function boot122(){
   }
 
   const ready=storage('read').then(d=>{localDiet=d?validateDiet(d):null;loadState='ready';}).catch(e=>{loadState='error';loadError=e.message||'Non riesco a leggere la dieta locale. Riprova a importare il file.';}).finally(()=>renderOriginale());
+  window.v122PrivateDietReady=ready.then(()=>({available:Boolean(localDiet),state:loadState}));
+  window.v122HasPrivateDiet=()=>Boolean(localDiet);
   window.v122ImportClick=()=>document.getElementById('v122PrivateFile')?.click();
   window.v122ImportFiles=async function(input){
-    const file=input?.files?.[0];if(!file||busy)return;busy=true;
+    const file=input?.files?.[0];if(!file||busy)return {ok:false};busy=true;
     try{
       if(file.size>MAX_BYTES)throw new Error('Il file è troppo grande: seleziona il file JSON della dieta');
       const diet=validateDiet(JSON.parse(await file.text()));await ready;await storage('write',diet);
       localDiet=diet;loadState='ready';loadError='';notify('Dieta salvata solo su questo dispositivo');renderOriginale();
-    }catch(e){notify(e instanceof SyntaxError?'Il file non è un JSON valido':e.message||'Importazione non riuscita');}
+      return {ok:true};
+    }catch(e){notify(e instanceof SyntaxError?'Il file non è un JSON valido':e.message||'Importazione non riuscita');return {ok:false};}
     finally{busy=false;input.value='';}
   };
   window.v122ExportDiet=function(){
