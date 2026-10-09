@@ -16,6 +16,7 @@ function validateDiet(raw){
   function meal(v){
     if(!v||typeof v!=='object')throw new Error('Pasto non valido');
     const m={name:text(v.name,100),items:array(v.items).map(x=>text(x))};
+    if(v.components!==undefined){if(!window.v124Quantities)throw new Error('Aggiorna l’app per aprire questo piano');m.components=window.v124Quantities.validateComponents(v.components);}
     if(v.alternative!==undefined){if(!Number.isInteger(v.alternative)||v.alternative<1||v.alternative>20)throw new Error('Alternativa non valida');m.alternative=v.alternative;}
     return m;
   }
@@ -29,16 +30,25 @@ function validateDiet(raw){
   }
   function section(v){if(!v||typeof v!=='object')throw new Error('Sezione non valida');return {title:text(v.title,200),blocks:array(v.blocks).map(block)};}
   if(!raw||raw.format!==FORMAT||raw.version!==1||raw.profile!=='simona')throw new Error('Seleziona il file della dieta privata di Simona');
-  if(!Array.isArray(raw.week)||raw.week.length!==7)throw new Error('La settimana deve contenere tutti i sette giorni');
-  const week=raw.week.map((d,i)=>{
+  function weekData(data){
+  if(!Array.isArray(data)||data.length!==7)throw new Error('La settimana deve contenere tutti i sette giorni');
+  return data.map((d,i)=>{
     if(!d||d.day!==GIORNI[i]||!Array.isArray(d.meals)||d.meals.length!==PASTI.length)throw new Error('Giorni o pasti incompleti');
     const meals=d.meals.map(meal);if(meals.some((m,j)=>m.name!==PASTI[j]))throw new Error('Suddivisione dei pasti non valida');
     return {day:GIORNI[i],meals};
-  });
+  });}
+  const week=weekData(raw.week);
   const diet={format:FORMAT,version:1,profile:'simona',title:text(raw.title,200),description:text(raw.description),week,
     foodSections:array(raw.foodSections,30).map(section),notes:array(raw.notes,30).map(section),source:text(raw.source)};
   if(raw.sourceContacts!==undefined)diet.sourceContacts=text(raw.sourceContacts);
   if(raw.sourcePages!==undefined){if(!Number.isInteger(raw.sourcePages)||raw.sourcePages<1||raw.sourcePages>100)throw new Error('Numero pagine non valido');diet.sourcePages=raw.sourcePages;}
+  if(raw.revision!==undefined){if(!Number.isInteger(raw.revision)||raw.revision<1||raw.revision>1000000)throw new Error('Revisione non valida');diet.revision=raw.revision;}
+  if(raw.plans!==undefined){
+    function planId(v){if(typeof v!=='string'||!/^[a-z0-9_-]{1,80}$/.test(v))throw new Error('Piano non valido');return v;}
+    diet.plans=array(raw.plans,10).map(p=>{const plan={id:planId(p.id),label:text(p.label,200),description:text(p.description),week:weekData(p.week)};if(plan.week.some(d=>d.meals.some(m=>!m.components)))throw new Error('Porzioni del piano incomplete');if(p.notes!==undefined)plan.notes=array(p.notes,30).map(x=>text(x));return plan;});
+    diet.primaryPlan=planId(raw.primaryPlan);
+    if(new Set(diet.plans.map(p=>p.id)).size!==diet.plans.length||!diet.plans.some(p=>p.id===diet.primaryPlan))throw new Error('Piano principale non valido');
+  }
   return diet;
 }
 
@@ -112,7 +122,7 @@ function boot122(){
     b.innerHTML='<b>📋</b>Dieta';b.onclick=function(){window.apriDietaOriginaleSimona122(this);};
   }
   function lista(items){return `<ul class="v122-list">${items.map(x=>`<li>${H(x)}</li>`).join('')}</ul>`;}
-  function pasto(m){return `<div class="v122-meal"><div class="v122-meal-title"><b>${H(m.name.toUpperCase())}</b>${m.alternative?`<span class="badge good">Alternativa ${m.alternative}</span>`:''}</div>${lista(m.items)}</div>`;}
+  function pasto(m,d,i){const structured=window.v124RenderMeal?.(m,d,i);if(structured)return structured;return `<div class="v122-meal"><div class="v122-meal-title"><b>${H(m.name.toUpperCase())}</b>${m.alternative?`<span class="badge good">Alternativa ${m.alternative}</span>`:''}</div>${lista(m.items)}</div>`;}
   function griglia(rows){return `<table class="v122-qty"><tbody>${rows.map(([a,b])=>`<tr><th scope="row">${H(a)}</th><td>${H(b)}</td></tr>`).join('')}</tbody></table>`;}
   function section(s){return `<div class="card v122-note-card"><h3>${H(s.title)}</h3>${s.blocks.map(b=>{
     if(b.type==='text')return `<p>${H(b.text)}</p>`;
@@ -121,17 +131,18 @@ function boot122(){
     if(b.type==='table')return griglia(b.rows);
     return pasto(b);
   }).join('')}</div>`;}
-  function giornoCard(d,i,selected){return `<article class="card v122-day ${selected?'on':''}" data-v122-day="${i}"><div class="row between"><div><h3>${H(d.day)}</h3><div class="meta">Esempio settimanale originale</div></div><button class="btn small secondary" onclick="v122ScegliGiorno(${i})">${selected?'Selezionato':'Apri'}</button></div>${d.meals.map(pasto).join('')}</article>`;}
+  function giornoCard(d,i,selected,label){return `<article class="card v122-day ${selected?'on':''}" data-v122-day="${i}"><div class="row between"><div><h3>${H(d.day)}</h3><div class="meta">${H(label||'Esempio settimanale originale')}</div></div><button class="btn small secondary" onclick="v122ScegliGiorno(${i})">${selected?'Selezionato':'Apri'}</button></div>${window.v124DayAction?.(i)||''}${d.meals.map((m,j)=>pasto(m,i,j)).join('')}</article>`;}
   function importInput(){return '<input id="v122PrivateFile" type="file" accept="application/json,.json" hidden onchange="v122ImportFiles(this)">';}
   function altreActions(){return '<div class="v122-top-actions"><button class="btn secondary" onclick="showScreenById(\'famiglia\')">👨‍👩‍👧‍👦 Altre diete in Famiglia</button><button class="btn secondary" onclick="apriFotoOriginali122()">🖼️ Foto originali</button></div>';}
   function content(){
     if(!localDiet)return `<div class="card v122-hero"><h3>Dieta originale di Simona</h3><p class="v122-local">${loadState==='loading'?'Preparazione della dieta sul dispositivo…':loadState==='error'?H(loadError):'Apri il collegamento personale che hai ricevuto: la dieta comparirà automaticamente e resterà salvata su questo dispositivo.'}</p><p class="v122-local">Potrai consultarla anche offline. Sul tuo altro telefono puoi usare lo stesso collegamento personale.</p>${altreActions()}<details class="v122-manage" style="margin-top:14px"><summary>Hai già una copia privata del piano?</summary><button class="btn full" style="margin-top:10px" ${loadState==='loading'?'disabled':''} onclick="v122ImportClick()">📥 Importa dieta privata</button>${importInput()}</details></div>`;
     const di=Math.max(0,GIORNI.indexOf(st.giornoPlanner));
+    const plan=window.v124SelectedPlan?.(localDiet),week=plan?.week||localDiet.week;
     return `<div class="card v122-hero"><div class="row between"><div><h3>${H(localDiet.title)}</h3><div class="v114-plan-badge">${localDiet.sourcePages?`TRASCRIZIONE DELLE ${localDiet.sourcePages} PAGINE ORIGINALI`:'PIANO ORIGINALE'}</div></div><span class="pill">SOLO QUI</span></div><p class="v122-local">${H(localDiet.description)}</p>${altreActions()}</div>
-      <div class="v122-day-nav">${GIORNI.map((g,i)=>`<button class="btn small ${i===di?'':'secondary'}" aria-pressed="${i===di}" onclick="v122ScegliGiorno(${i})">${H(g)}</button>`).join('')}</div>
-      <div class="v122-week" id="v122Week">${localDiet.week.map((d,i)=>giornoCard(d,i,i===di)).join('')}</div>
+      ${window.v124PlanControls?.(localDiet)||''}<div class="v122-day-nav">${GIORNI.map((g,i)=>`<button class="btn small ${i===di?'':'secondary'}" aria-pressed="${i===di}" onclick="v122ScegliGiorno(${i})">${H(g)}</button>`).join('')}</div>
+      <div class="v122-week" id="v122Week">${week.map((d,i)=>giornoCard(d,i,i===di,plan?.label)).join('')}</div>
       <h2 class="v122-section-title">Scelte e grammature originali</h2>${localDiet.foodSections.map(section).join('')}
-      <h2 class="v122-section-title">Note aggiuntive del piano</h2>${localDiet.notes.map(section).join('')}
+      <h2 class="v122-section-title">Note aggiuntive del piano</h2>${window.v124PlanNotes?.(localDiet)||''}${localDiet.notes.map(section).join('')}
       <div class="card v122-source"><b>Fonte:</b> ${H(localDiet.source)}${localDiet.sourceContacts?`<p>${H(localDiet.sourceContacts)}</p>`:''}</div>
       <details class="card v122-manage"><summary>Gestisci la dieta su questo dispositivo</summary><p class="v122-local">Il piano importato è conservato solo nel browser o nell’app su questo dispositivo. Prima di cancellare i dati del browser, conserva il file privato per poterlo importare di nuovo.</p><div class="v122-top-actions"><button class="btn secondary" onclick="v122ImportClick()">Importa un altro file</button><button class="btn secondary" onclick="v122ExportDiet()">Esporta copia privata</button><button class="btn secondary" onclick="v122ClearDiet()">Rimuovi dieta locale</button></div>${importInput()}</details>`;
   }
@@ -149,12 +160,16 @@ function boot122(){
   const ready=storage('read').then(d=>{localDiet=d?validateDiet(d):null;loadState='ready';}).catch(e=>{loadState='error';loadError=e.message||'Non riesco a leggere la dieta locale. Riprova a importare il file.';}).finally(()=>renderOriginale());
   window.v122PrivateDietReady=ready.then(()=>({available:Boolean(localDiet),state:loadState}));
   window.v122HasPrivateDiet=()=>Boolean(localDiet);
+  window.v122GetPrivateDiet=()=>localDiet?JSON.parse(JSON.stringify(localDiet)):null;
+  window.v122RenderPrivateDiet=renderOriginale;
+  window.v122CanUpgradePrivateDiet=raw=>{const d=validateDiet(raw);return Boolean(localDiet&&d.source===localDiet.source&&(d.revision||1)>(localDiet.revision||1));};
   window.v122ImportClick=()=>document.getElementById('v122PrivateFile')?.click();
   window.v122ImportFiles=async function(input){
     const file=input?.files?.[0];if(!file||busy)return {ok:false};busy=true;
     try{
       if(file.size>MAX_BYTES)throw new Error('Il file è troppo grande: seleziona il file JSON della dieta');
       const diet=validateDiet(JSON.parse(await file.text()));await ready;await storage('write',diet);
+      if(diet.plans&&(diet.revision||1)>(localDiet?.revision||1)){st.v124=st.v124||{};st.v124.plan=diet.primaryPlan;save();}
       localDiet=diet;loadState='ready';loadError='';notify('Dieta salvata solo su questo dispositivo');renderOriginale();
       return {ok:true};
     }catch(e){notify(e instanceof SyntaxError?'Il file non è un JSON valido':e.message||'Importazione non riuscita');return {ok:false};}

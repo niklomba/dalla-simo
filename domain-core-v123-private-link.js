@@ -37,10 +37,10 @@ function boot123(){
     const stored=await window.v122PrivateDietReady;
     const available=typeof window.v122HasPrivateDiet==='function'?window.v122HasPrivateDiet():stored.available;
     if(token===null)return {ok:available,existing:available};
-    if(available){window.__DALLA_SIMO_DIET_V123__.activation='already-local';return {ok:true,existing:true};}
     window.__DALLA_SIMO_DIET_V123__.activation='preparing';
     try{
       const json=await decodePersonalToken(token);
+      if(available&&!window.v122CanUpgradePrivateDiet?.(JSON.parse(json))){window.__DALLA_SIMO_DIET_V123__.activation='already-local';return {ok:true,existing:true};}
       const result=await window.v122ImportFiles({files:[new File([json],'piano-privato.json',{type:'application/json'})],value:''});
       if(!result?.ok)throw new Error('Salvataggio locale non riuscito');
       window.__DALLA_SIMO_DIET_V123__.activation='local';return {ok:true,existing:false};
