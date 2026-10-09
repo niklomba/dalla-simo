@@ -9,7 +9,7 @@ const STORE='original_diets';
 const FORMAT='dalla-simo-private-diet';
 const MAX_BYTES=1024*1024;
 
-// Il codice distribuito non contiene alimenti, quantità o note del piano personale.
+// Il lettore conserva le copie personali localmente. Il piano incluso non ha nominativi o recapiti.
 function validateDiet(raw){
   function text(v,max=5000){if(typeof v!=='string'||!v.trim()||v.length>max)throw new Error('Testo del piano non valido');return v;}
   function array(v,max=60){if(!Array.isArray(v)||!v.length||v.length>max)throw new Error('Sezione del piano non valida');return v;}
@@ -80,7 +80,8 @@ function boot122(){
   const membro=id=>(st.membri||[]).find(m=>m.id===id);
   const simona=()=> (st.membri||[]).find(m=>N(m.nome)==='simona');
   const keyMembro=id=>N(membro(id)?.nome);
-  let localDiet=null,loadState='loading',loadError='',busy=false;
+  const included=()=>typeof window.v125GetDefaultDiet==='function'?validateDiet(window.v125GetDefaultDiet()):null;
+  let localDiet=included(),loadState=localDiet?'ready':'loading',loadError='',busy=false;
   const notify=msg=>{if(typeof toast==='function')toast(msg);};
   st.v122=st.v122||{};
   if(!['simona-originale','altre'].includes(st.v122.vista))st.v122.vista='simona-originale';
@@ -88,6 +89,7 @@ function boot122(){
   if(!document.getElementById('v122css')){
     const s=document.createElement('style');s.id='v122css';s.textContent=`
       .v122-hero{background:linear-gradient(135deg,#eef4ed,#fff8ed);border-left:5px solid var(--green)}
+      .v122-top-actions.v125-compact{display:flex;flex-wrap:wrap}.v122-top-actions.v125-compact button{font-size:12px}
       .v122-top-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
       .v122-day-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 9px;scrollbar-width:thin}
       .v122-day-nav button{white-space:nowrap}
@@ -133,18 +135,18 @@ function boot122(){
   }).join('')}</div>`;}
   function giornoCard(d,i,selected,label){return `<article class="card v122-day ${selected?'on':''}" data-v122-day="${i}"><div class="row between"><div><h3>${H(d.day)}</h3><div class="meta">${H(label||'Esempio settimanale originale')}</div></div><button class="btn small secondary" onclick="v122ScegliGiorno(${i})">${selected?'Selezionato':'Apri'}</button></div>${window.v124DayAction?.(i)||''}${d.meals.map((m,j)=>pasto(m,i,j)).join('')}</article>`;}
   function importInput(){return '<input id="v122PrivateFile" type="file" accept="application/json,.json" hidden onchange="v122ImportFiles(this)">';}
-  function altreActions(){return '<div class="v122-top-actions"><button class="btn secondary" onclick="showScreenById(\'famiglia\')">👨‍👩‍👧‍👦 Altre diete in Famiglia</button><button class="btn secondary" onclick="apriFotoOriginali122()">🖼️ Foto originali</button></div>';}
+  function altreActions(){return '<div class="v122-top-actions v125-compact"><button class="btn small secondary" onclick="showScreenById(\'famiglia\')">Altre diete · Famiglia</button><button class="btn small secondary" onclick="v122ExportText()">Scarica testo</button></div>';}
   function content(){
     if(!localDiet)return `<div class="card v122-hero"><h3>Dieta originale di Simona</h3><p class="v122-local">${loadState==='loading'?'Preparazione della dieta sul dispositivo…':loadState==='error'?H(loadError):'Apri il collegamento personale che hai ricevuto: la dieta comparirà automaticamente e resterà salvata su questo dispositivo.'}</p><p class="v122-local">Potrai consultarla anche offline. Sul tuo altro telefono puoi usare lo stesso collegamento personale.</p>${altreActions()}<details class="v122-manage" style="margin-top:14px"><summary>Hai già una copia privata del piano?</summary><button class="btn full" style="margin-top:10px" ${loadState==='loading'?'disabled':''} onclick="v122ImportClick()">📥 Importa dieta privata</button>${importInput()}</details></div>`;
     const di=Math.max(0,GIORNI.indexOf(st.giornoPlanner));
     const plan=window.v124SelectedPlan?.(localDiet),week=plan?.week||localDiet.week;
-    return `<div class="card v122-hero"><div class="row between"><div><h3>${H(localDiet.title)}</h3><div class="v114-plan-badge">${localDiet.sourcePages?`TRASCRIZIONE DELLE ${localDiet.sourcePages} PAGINE ORIGINALI`:'PIANO ORIGINALE'}</div></div><span class="pill">SOLO QUI</span></div><p class="v122-local">${H(localDiet.description)}</p>${altreActions()}</div>
+    return `<div class="card v122-hero"><details><summary><b>${H(localDiet.title)}</b>${localDiet.sourcePages?` · ${localDiet.sourcePages} pagine`:''}</summary><p class="v122-local">${H(localDiet.description)}</p>${altreActions()}</details></div>
       ${window.v124PlanControls?.(localDiet)||''}<div class="v122-day-nav">${GIORNI.map((g,i)=>`<button class="btn small ${i===di?'':'secondary'}" aria-pressed="${i===di}" onclick="v122ScegliGiorno(${i})">${H(g)}</button>`).join('')}</div>
       <div class="v122-week" id="v122Week">${week.map((d,i)=>giornoCard(d,i,i===di,plan?.label)).join('')}</div>
       <h2 class="v122-section-title">Scelte e grammature originali</h2>${localDiet.foodSections.map(section).join('')}
-      <h2 class="v122-section-title">Note aggiuntive del piano</h2>${window.v124PlanNotes?.(localDiet)||''}${localDiet.notes.map(section).join('')}
+      <h2 class="v122-section-title">Note aggiuntive del piano</h2>${window.v125ProfileSection?.()||''}${window.v124PlanNotes?.(localDiet)||''}${localDiet.notes.map(section).join('')}
       <div class="card v122-source"><b>Fonte:</b> ${H(localDiet.source)}${localDiet.sourceContacts?`<p>${H(localDiet.sourceContacts)}</p>`:''}</div>
-      <details class="card v122-manage"><summary>Gestisci la dieta su questo dispositivo</summary><p class="v122-local">Il piano importato è conservato solo nel browser o nell’app su questo dispositivo. Prima di cancellare i dati del browser, conserva il file privato per poterlo importare di nuovo.</p><div class="v122-top-actions"><button class="btn secondary" onclick="v122ImportClick()">Importa un altro file</button><button class="btn secondary" onclick="v122ExportDiet()">Esporta copia privata</button><button class="btn secondary" onclick="v122ClearDiet()">Rimuovi dieta locale</button></div>${importInput()}</details>`;
+      <details class="card v122-manage"><summary>Copie e gestione avanzata</summary><p class="v122-local">Il piano originale è già incluso. Dati del profilo, scelte e spesa sono salvati sul dispositivo. Puoi esportare una copia o, se ti serve, importare un altro piano.</p><div class="v122-top-actions"><button class="btn secondary" onclick="v122ExportDiet()">Esporta copia del piano</button><button class="btn secondary" onclick="v122ClearDiet()">Ripristina piano originale incluso</button><button class="btn secondary" onclick="v122ImportClick()">Importa un altro piano</button></div>${importInput()}</details>`;
   }
   function renderOriginale(){
     if(st.v122.vista!=='simona-originale')return;
@@ -152,12 +154,25 @@ function boot122(){
     for(const id of ['giorniPlanner','v113DietCtl']){const el=document.getElementById(id);if(el)el.style.display='none';}
     const g2=sec.querySelector(':scope > .grid2');if(g2)g2.style.display='none';
     const h1=sec.querySelector('h1'),sub=sec.querySelector('.sub');
-    if(h1)h1.textContent='Dieta originale di Simona';if(sub)sub.textContent='Pasti e grammature · conservati solo su questo dispositivo';
+    if(h1)h1.textContent='Dieta originale di Simona';if(sub)sub.textContent='Piano già incluso · pasti, grammature e note';
     out.innerHTML=content();
     requestAnimationFrame(()=>{const week=out.querySelector('#v122Week'),card=out.querySelector('.v122-day.on');if(week&&card)week.scrollTo({left:card.offsetLeft-week.offsetLeft,behavior:'auto'});});
   }
 
-  const ready=storage('read').then(d=>{localDiet=d?validateDiet(d):null;loadState='ready';}).catch(e=>{loadState='error';loadError=e.message||'Non riesco a leggere la dieta locale. Riprova a importare il file.';}).finally(()=>renderOriginale());
+  const ready=storage('read').then(async d=>{
+    if(d){
+      const saved=validateDiet(d),seed=included();
+      const sameOriginal=seed&&saved.week.every((day,i)=>day.meals.every((meal,j)=>JSON.stringify(meal.items)===JSON.stringify(seed.week[i].meals[j].items)));
+      localDiet=sameOriginal&&(saved.revision||1)<seed.revision?seed:saved;
+      if(localDiet!==saved)await storage('write',localDiet);
+    }
+    else if(localDiet)await storage('write',localDiet);
+    loadState='ready';
+  }).catch(e=>{
+    // Anche se IndexedDB è bloccato, il testo incluso resta consultabile.
+    if(localDiet){loadState='ready';loadError='';}
+    else{loadState='error';loadError=e.message||'Archivio locale non disponibile';}
+  }).finally(()=>renderOriginale());
   window.v122PrivateDietReady=ready.then(()=>({available:Boolean(localDiet),state:loadState}));
   window.v122HasPrivateDiet=()=>Boolean(localDiet);
   window.v122GetPrivateDiet=()=>localDiet?JSON.parse(JSON.stringify(localDiet)):null;
@@ -179,9 +194,19 @@ function boot122(){
     if(!localDiet)return;const blob=new Blob([JSON.stringify(localDiet,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='Dieta_originale_Simona_privata.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
+  window.v122ExportText=function(){
+    if(!localDiet)return;
+    const plan=window.v124SelectedPlan?.(localDiet),lines=[localDiet.title,plan?.label||'Piano originale',''];
+    const profile=st.v125?.profile||{},labels={sex:'Sesso',age:'Età (anni)',weight:'Peso (kg)',height:'Altezza (cm)',goal:'Obiettivo peso (kg)',activity:'Attività fisica'};
+    for(const [key,label] of Object.entries(labels))if(profile[key]!==undefined)lines.push(label+': '+profile[key]);
+    function blocks(sections){for(const s of sections){lines.push('',s.title.toUpperCase());for(const b of s.blocks){if(b.type==='text'||b.type==='heading')lines.push(b.text);else if(b.type==='table')for(const row of b.rows)lines.push(row.join(': '));else{if(b.type==='meal')lines.push(b.name);for(const item of b.items)lines.push('• '+item);}}}}
+    for(const d of plan?.week||localDiet.week){lines.push('',d.day.toUpperCase());for(const m of d.meals)lines.push(m.name,...m.items.map(x=>'• '+x));}
+    blocks(localDiet.foodSections);if(plan?.notes?.length)lines.push('','NOTE SUL PIANO',...plan.notes.map(x=>'• '+x));blocks(localDiet.notes);
+    const url=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='Dieta_originale_testo.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
   window.v122ClearDiet=async function(){
-    if(!localDiet||busy||!confirm('Rimuovere la dieta originale da questo dispositivo? Potrai ripristinarla importando il file privato. Le foto originali e le altre diete resteranno disponibili.'))return;
-    busy=true;try{await storage('delete');localDiet=null;loadState='ready';notify('Dieta locale rimossa');renderOriginale();}catch(e){notify(e.message||'Rimozione non riuscita');}finally{busy=false;}
+    if(busy)return;const diet=included();if(!diet)return;
+    busy=true;try{await storage('write',diet);localDiet=diet;st.v124=st.v124||{};st.v124.plan=diet.primaryPlan;loadState='ready';save();notify('Piano originale ripristinato');renderOriginale();}catch(e){notify(e.message||'Ripristino non riuscito');}finally{busy=false;}
   };
 
   const renderSettimanaPrima122=window.renderSettimana;
@@ -225,7 +250,7 @@ function boot122(){
     const tool=[...box.querySelectorAll('.v114-action')].find(b=>/menu/i.test(b.textContent||''));if(tool){tool.innerHTML='<b>📋</b>Dieta Simona';tool.onclick=()=>window.apriDietaOriginaleSimona122();}
     return r;
   };
-  window.__DALLA_SIMO_DIET_V122__={version:'1.22',primaryView:'simona-originale',originalDietStorage:'IndexedDB locale',publicDietPayload:false,familyOtherDiets:true};
+  window.__DALLA_SIMO_DIET_V122__={version:'1.22',primaryView:'simona-originale',originalDietStorage:'IndexedDB locale',publicDietPayload:false,includedAnonymousText:Boolean(localDiet),familyOtherDiets:true};
   navDieta();renderMembri();renderSettimana();
 }
 boot122();
