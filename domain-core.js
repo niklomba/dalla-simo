@@ -1,25 +1,6 @@
-// Loader Dalla Simo v1.25
+// Loader Dalla Simo v1.26 — ordine compatibile con i dati precedenti.
 (function(){
-  function carica(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=()=>reject(new Error('Impossibile caricare '+src));document.head.appendChild(s)})}
-  carica('./domain-core-v113.js?v=125')
-    .then(()=>carica('./domain-core-v114.js?v=125'))
-    .then(()=>carica('./domain-core-v118-recipes.js?v=125'))
-    .then(()=>carica('./domain-core-v119-recipes.js?v=125'))
-    .then(()=>carica('./domain-core-v116.js?v=125'))
-    .then(()=>carica('./domain-core-v117.js?v=125'))
-    .then(()=>carica('./domain-core-v117-search-scanner.js?v=125'))
-    .then(()=>carica('./domain-core-v117-product-resolver.js?v=125'))
-    .then(()=>carica('./domain-core-v117-qr-resolver.js?v=125'))
-    .then(()=>carica('./domain-core-v117-discard-ui.js?v=125'))
-    .then(()=>carica('./domain-core-v117-spesa-actions.js?v=125'))
-    .then(()=>carica('./domain-core-v118-ui.js?v=125'))
-    .then(()=>carica('./domain-core-v119-family-nutrition.js?v=125'))
-    .then(()=>carica('./domain-core-v120-diet-plans.js?v=125'))
-    .then(()=>carica('./domain-core-v121-original-diets.js?v=125'))
-    .then(()=>carica('./domain-core-v124-diet-shopping.js?v=125'))
-    .then(()=>carica('./domain-core-v125-default-diet.js?v=125'))
-    .then(()=>carica('./domain-core-v122-simona-original.js?v=125'))
-    .then(()=>carica('./domain-core-v123-private-link.js?v=125'))
-    .then(()=>{document.title='App Alimentazione — Dalla Simo v1.25';const sub=document.querySelector('.brand-subtitle');if(sub)sub.textContent='Alimentazione familiare · v1.25';const rsub=document.querySelector('#ricette .sub');if(rsub&&window.__DALLA_SIMO_RECIPES_V119__)rsub.textContent='Archivio locale · '+window.__DALLA_SIMO_RECIPES_V119__.total+' ricette/versioni uniche · '+window.__DALLA_SIMO_RECIPES_V119__.uniqueNames+' piatti distinti';window.__DALLA_SIMO_BUILD__='v1.25';console.log('Dalla Simo v1.25 attiva')})
-    .catch(e=>console.error('Dalla Simo v1.25:',e));
+const files=["v113", "v114", "v118-recipes", "v119-recipes", "v116", "v117", "v117-search-scanner", "v117-product-resolver", "v117-qr-resolver", "v117-discard-ui", "v117-spesa-actions", "v118-ui", "v119-family-nutrition", "v120-diet-plans", "v121-original-diets", "v124-diet-shopping", "v125-default-diet", "v126-diet", "v122-simona-original", "v123-private-link", "v126-nutrition", "v126-ui"];
+function load(file){return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./domain-core-'+file+'.js?v=126';script.async=false;script.onload=resolve;script.onerror=()=>reject(new Error('Impossibile caricare '+file));document.head.appendChild(script);});}
+window.__DALLA_SIMO_READY__=files.reduce((p,file)=>p.then(()=>load(file)),Promise.resolve()).catch(error=>{console.error('Dalla Simo v1.26:',error);const out=document.getElementById('oggi');if(out){const message=document.createElement('div');message.className='card note';message.textContent='Aggiornamento incompleto. Ricarica l’app per preparare il piano alimentare.';out.prepend(message);}throw error;});
 })();
