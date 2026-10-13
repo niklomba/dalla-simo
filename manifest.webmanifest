@@ -8,18 +8,18 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#F7F5EF",
-  "theme_color": "#5F7D63",
+  "background_color": "#FCF2F5",
+  "theme_color": "#99546D",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icon-192-v112.png",
+      "src": "./icon-192-rose.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512-v112.png",
+      "src": "./icon-512-rose.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

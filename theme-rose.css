@@ -1,0 +1,49 @@
+/* Palette rosa cipria. Gli alias mantengono compatibili i moduli esistenti. */
+:root {
+  color-scheme: light;
+  --bg: #fcf2f5;
+  --card: #fffafd;
+  --text: #332832;
+  --muted: #7d6570;
+  --accent: #99546d;
+  --accent-soft: #f7e5ed;
+  --accent-faint: #fcf0f5;
+  --green: var(--accent);
+  --green2: var(--accent-soft);
+  --green3: var(--accent-faint);
+  --border: #ebced9;
+  --shadow: 0 8px 24px rgba(114, 57, 78, .08);
+}
+
+body { background: var(--bg); }
+.app { background: linear-gradient(#fff8fb, var(--bg)); }
+.app > header { background: rgba(255, 248, 251, .96); }
+.app .hero,
+.app .transfer-box,
+.app .v114-rule { background: linear-gradient(135deg, #fffafd, var(--accent-faint)); }
+.app .brand-logo { background: var(--bg); }
+body .nav { background: rgba(255, 250, 253, .97); }
+body .nav button { color: var(--muted); }
+body .nav button.on { color: var(--accent); background: var(--accent-soft); }
+.app .badge:not(.warn):not(.good) { background: var(--accent-faint); border-color: var(--border); }
+.app .recipe { border-top-color: var(--border); }
+.app .shop-check { border-color: #d7adbd; }
+.app .shop-bought .shop-check { border-color: var(--accent); }
+.app .shop-bought .recipe-title { color: var(--muted); }
+.app .v126-weight { color: #85475f; }
+.app .v126-ingredients li { border-bottom-color: #f1dfe7; }
+.app .v126-week { scrollbar-color: #cf9cb0 var(--accent-faint); }
+.app .v126-day { background: #f9eaf0; }
+.app .v126-day.on { border-color: #bb8299; }
+body button:focus-visible,
+body summary:focus-visible,
+body a:focus-visible { outline-color: #bd7894; }
+body input:focus-visible,
+body select:focus-visible { outline-color: #bd7894; }
+input { accent-color: var(--accent); }
+.modal-bg { background: rgba(61, 31, 44, .38); }
+.handle { background: var(--border); }
+.toast { background: var(--text); }
+#pwaInstallBar { background: #fffafd; border-color: var(--border); }
+#pwaInstallBar button { background: var(--accent); }
+#pwaInstallBar .close { background: var(--accent-soft); color: var(--accent); }
